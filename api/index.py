@@ -36,10 +36,8 @@ SEAT_CACHE_TTL = 60
 SECOND_FLOOR_START_ROW = 33
 confirm_lock = Lock()
 
-
 def get_floor_label_from_excel_row(excel_row: int) -> str:
     return "2樓" if excel_row >= SECOND_FLOOR_START_ROW else "1樓"
-
 
 def get_cached_seat_map():
     now = time.time()
