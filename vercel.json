@@ -2,7 +2,7 @@
   "version": 2,
   "cleanUrls": true,
   "routes": [
-    { "src": "/api/seats", "dest": "/api/seats.py" },
+    { "src": "/api/(.*)", "dest": "/api/index.py" },
     { "handle": "filesystem" }
   ]
 }
