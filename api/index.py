@@ -154,18 +154,29 @@ def api_orders():
         "orders": get_orders_by_name(name)
     })
 
-
 @app.route("/api/orders/<order_id>/note", methods=["PATCH"])
 def api_update_order_note(order_id):
     data = request.get_json(silent=True) or {}
     note = str(data.get("note", "")).strip()
 
+    from lib.sheet_repo import get_all_records, normalize_text
+
+    rows = get_all_records()
+    debug_ids = [normalize_text(row.get("訂單ID")) for row in rows[:20]]
+
+    print("DEBUG note order_id =", repr(order_id))
+    print("DEBUG first 20 sheet order_ids =", debug_ids)
+
     ok = update_order_note(order_id, note)
     if not ok:
-        return jsonify({"success": False, "message": "找不到訂單"}), 404
+        return jsonify({
+            "success": False,
+            "message": "找不到訂單",
+            "debug_order_id": order_id,
+            "debug_first_ids": debug_ids
+        }), 404
 
     return jsonify({"success": True, "message": "備註已更新"})
-
 
 @app.route("/api/orders/<order_id>", methods=["DELETE"])
 def api_delete_order(order_id):
