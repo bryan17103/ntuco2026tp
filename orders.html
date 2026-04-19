@@ -551,24 +551,36 @@
         }
 
         async function saveNote(orderId) {
+            console.log("DEBUG saveNote orderId =", orderId);
+        
             const input = document.getElementById(`note-${orderId}`);
             const note = input ? input.value.trim() : "";
-
-            const res = await fetch(`/api/orders/${orderId}/note`, {
+        
+            const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/note`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ note })
             });
-
-            const data = await res.json();
-
+        
+            const raw = await res.text();
+            console.log("DEBUG saveNote status =", res.status);
+            console.log("DEBUG saveNote raw =", raw);
+        
+            let data = {};
+            try {
+                data = JSON.parse(raw);
+            } catch (e) {
+                alert(`回傳不是 JSON：${raw}`);
+                return;
+            }
+        
             if (!res.ok || !data.success) {
                 alert(data.message || "更新失敗");
                 return;
             }
-
+        
             alert("備註已更新");
             if (currentSearchName) {
                 searchOrders();
