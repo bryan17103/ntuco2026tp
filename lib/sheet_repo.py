@@ -1,6 +1,14 @@
 from __future__ import annotations
-
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
+TAIPEI_TZ = ZoneInfo("Asia/Taipei")
+
+def now_str() -> str:
+    return datetime.now(TAIPEI_TZ).strftime("%Y/%m/%d %H:%M")
+
+def today_mmdd() -> str:
+    return datetime.now(TAIPEI_TZ).strftime("%m%d")
 from typing import Dict, List, Optional, Set, Tuple
 import time
 import os
