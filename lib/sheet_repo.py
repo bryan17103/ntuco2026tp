@@ -310,26 +310,17 @@ def get_orders_by_name(name: str) -> List[dict]:
 
 def update_order_note(order_id: str, note: str) -> bool:
     ws = get_worksheet()
-    all_values = ws.get_all_values()
+    records = ws.get_all_records()
 
     target_order_id = normalize_text(order_id)
     updated_any = False
 
-    for row_idx in range(2, len(all_values) + 1):
-        row = all_values[row_idx - 1]
-
-        current_order_id = normalize_text(row[1] if len(row) > 1 else "")
-        status = normalize_text(row[2] if len(row) > 2 else "").lower()
-
-        print(
-            "DEBUG compare:",
-            "target=", repr(target_order_id),
-            "current=", repr(current_order_id),
-            "status=", repr(status)
-        )
+    for idx, row in enumerate(records, start=2):  # Google Sheet 第 2 列開始是資料
+        current_order_id = normalize_text(row.get("訂單ID"))
+        status = normalize_text(row.get("訂單狀態")).lower()
 
         if current_order_id == target_order_id and status in {"active", "locked"}:
-            ws.update_cell(row_idx, 9, note)
+            ws.update_cell(idx, 9, note)  # I 欄 = 訂單備註
             updated_any = True
 
     return updated_any
@@ -368,25 +359,21 @@ def mark_order_deleted(order_id: str) -> bool:
 
 
 def update_order_pickup_status(order_id: str, pickup_open: bool = None, picked_up: bool = None) -> bool:
-    """
-    更新取票狀態：
-    - pickup_open -> J 是否開放取票
-    - picked_up -> K 是否已取票
-    """
     ws = get_worksheet()
-    all_values = ws.get_all_values()
+    records = ws.get_all_records()
 
+    target_order_id = normalize_text(order_id)
     updated_any = False
-    for row_idx in range(2, len(all_values) + 1):
-        row = all_values[row_idx - 1]
-        current_order_id = normalize_text(row[1] if len(row) > 1 else "")  # B
-        status = normalize_text(row[2] if len(row) > 2 else "").lower()    # C
 
-        if current_order_id == order_id and status == "active":
+    for idx, row in enumerate(records, start=2):
+        current_order_id = normalize_text(row.get("訂單ID"))
+        status = normalize_text(row.get("訂單狀態")).lower()
+
+        if current_order_id == target_order_id and status in {"active", "locked"}:
             if pickup_open is not None:
-                ws.update_cell(row_idx, 10, bool(pickup_open))  # J
+                ws.update_cell(idx, 10, bool(pickup_open))  # J
             if picked_up is not None:
-                ws.update_cell(row_idx, 11, bool(picked_up))    # K
+                ws.update_cell(idx, 11, bool(picked_up))    # K
             updated_any = True
 
     if updated_any:
