@@ -129,35 +129,17 @@ def get_all_records() -> List[dict]:
     ws = get_worksheet()
     return ws.get_all_records()
 
+import random
+
 def generate_order_id(name: str) -> str:
-    ws = get_worksheet()
-    all_values = ws.get_all_values()
+    now = datetime.now(TAIPEI_TZ)
 
-    safe_name = sanitize_name_for_order_id(name)
-    base = f"{safe_name}_"
-
-    max_index = 0
-
-    for row in all_values[1:]:
-        if len(row) < 2:
-            continue
-
-        order_id = normalize_text(row[1])
-        if not order_id.startswith(base):
-            continue
-
-        parts = order_id.split("_")
-        if len(parts) < 2:
-            continue
-
-        try:
-            idx = int(parts[-1])
-            if idx > max_index:
-                max_index = idx
-        except Exception:
-            continue
-
-    return f"{base}{max_index + 1}"
+    return (
+        "TP"
+        + now.strftime("%m%d-%H%M-")
+        + f"{now.second:02d}"
+        + str(random.randint(0,9))
+    )
 
 
 def get_active_records() -> List[dict]:
