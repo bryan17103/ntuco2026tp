@@ -6,7 +6,7 @@ let zoomLevel = 1.0;
 let seatMapBaseWidth = 0;
 let seatMapBaseHeight = 0;
 
-const SECOND_FLOOR_START_ROW = 3; // 依你目前 Excel 結構，2樓大約從這裡開始
+const SECOND_FLOOR_START_ROW = 33; // 依你目前 Excel 結構，2樓大約從這裡開始
 
 async function loadSeats() {
     const res = await fetch("/api/seats");
