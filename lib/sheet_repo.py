@@ -88,11 +88,11 @@ def ensure_headers() -> None:
 
 
 def now_str() -> str:
-    return datetime.now().strftime("%Y/%m/%d %H:%M")
+    return datetime.now(TAIPEI_TZ).strftime("%Y/%m/%d %H:%M")
 
 
 def today_mmdd() -> str:
-    return datetime.now().strftime("%m%d")
+    return datetime.now(TAIPEI_TZ).strftime("%m%d")
 
 
 def normalize_text(value) -> str:
