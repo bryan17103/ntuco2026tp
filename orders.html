@@ -146,46 +146,33 @@
         }
 
         .orders-table th:nth-child(1),
-        .orders-table td:nth-child(1) {
-            width: 160px;
-        }
-
+        .orders-table td:nth-child(1) { width: 160px; }
+        
         .orders-table th:nth-child(2),
-        .orders-table td:nth-child(2) {
-            width: 110px;
-        }
-
+        .orders-table td:nth-child(2) { width: 110px; }
+        
         .orders-table th:nth-child(3),
         .orders-table td:nth-child(3) {
-            width: 110px;
-        }
-
-        .orders-table th:nth-child(4),
-        .orders-table td:nth-child(4) {
             width: 180px;
             white-space: normal;
-        word-break: break-word;
-        line-height: 1.5;
+            word-break: break-word;
+            line-height: 1.5;
         }
-
+        
+        .orders-table th:nth-child(4),
+        .orders-table td:nth-child(4) { width: 90px; }
+        
         .orders-table th:nth-child(5),
-        .orders-table td:nth-child(5) {
-            width: 90px;
-        }
-
+        .orders-table td:nth-child(5) { width: 360px; }
+        
         .orders-table th:nth-child(6),
         .orders-table td:nth-child(6) {
-            width: 360px;
-        }
-
-        .orders-table th:nth-child(7),
-        .orders-table td:nth-child(7) {
             width: 160px;
             text-align: center;
         }
-
-        .orders-table th:nth-child(8),
-        .orders-table td:nth-child(8) {
+        
+        .orders-table th:nth-child(7),
+        .orders-table td:nth-child(7) {
             width: 210px;
             text-align: center;
         }
@@ -390,7 +377,6 @@
                     <thead>
                         <tr>
                             <th>訂單日期與時間</th>
-                            <th>訂單ID</th>
                             <th>排數</th>
                             <th>座位</th>
                             <th>票價</th>
@@ -490,7 +476,6 @@
             tbody.innerHTML = orders.map(order => `
                 <tr>
                     <td class="order-strong">${escapeHtml(order.datetime)}</td>
-                    <td class="order-strong">${escapeHtml(order.order_id)}</td>
                     <td class="order-strong">${escapeHtml(order.floor)}${escapeHtml(order.row_label)}排</td>
                     <td class="order-strong">${order.seats.map(seat => `${seat}`).join("、")}</td>
                     <td class="order-strong">$${order.price}</td>
