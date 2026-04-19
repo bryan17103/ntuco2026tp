@@ -12,8 +12,9 @@ from google.oauth2.service_account import Credentials
 from collections import defaultdict
 from collections import defaultdict
 
-SECTION_MEMBER_FILE = os.path.join(os.path.dirname(__file__), "data", "section_members.txt")
-STATS_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "data", "stats_config.txt")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+SECTION_MEMBER_FILE = os.path.join(PROJECT_ROOT, "data", "section_members.txt")
+STATS_CONFIG_FILE = os.path.join(PROJECT_ROOT, "data", "stats_config.txt")
 
 
 SCOPES = [
