@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>《嶋聲》後台管理</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body.admin-page {
+            margin: 0;
+            font-family: Arial, "Noto Sans TC", sans-serif;
+            background: linear-gradient(135deg, #0f3b3a, #4b1f11);
+            min-height: 100vh;
+            padding: 12px;
+        }
+
+        .admin-shell {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            min-height: calc(100vh - 24px);
+        }
+
+        .admin-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .admin-title-wrap h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #222;
+            font-weight: 800;
+        }
+
+        .admin-title-wrap p {
+            margin: 8px 0 0 0;
+            color: #7a7a7a;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .back-link-btn {
+            height: 44px;
+            padding: 0 20px;
+            border-radius: 16px;
+            border: 2px solid #dddddd;
+            background: #fff;
+            color: #4a4a4a;
+            font-size: 15px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-search-card {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .admin-search-input {
+            width: 300px;
+            max-width: 100%;
+            height: 52px;
+            border: 2px solid #d8d8d8;
+            border-radius: 18px;
+            padding: 0 18px;
+            font-size: 16px;
+            outline: none;
+            background: #fff;
+        }
+
+        .admin-search-btn {
+            height: 52px;
+            padding: 0 24px;
+            border: none;
+            border-radius: 18px;
+            background: #f26c41;
+            color: white;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .admin-search-btn:hover {
+            background: #e95d31;
+        }
+
+        .admin-table-card {
+            border: 1.5px solid #e8e8e8;
+            border-radius: 26px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .admin-table-scroll {
+            overflow-x: auto;
+        }
+
+        table.admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            min-width: 1500px;
+        }
+
+        .admin-table thead th {
+            background: #fafafa;
+            color: #2f2f2f;
+            font-size: 16px;
+            font-weight: 800;
+            text-align: left;
+            padding: 18px 14px;
+            border-bottom: 1px solid #ececec;
+            white-space: nowrap;
+        }
+
+        .admin-table tbody td {
+            padding: 16px 14px;
+            border-bottom: 1px solid #efefef;
+            vertical-align: middle;
+            font-size: 15px;
+        }
+
+        .admin-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .admin-table th:nth-child(1),
+        .admin-table td:nth-child(1) { width: 190px; }
+
+        .admin-table th:nth-child(2),
+        .admin-table td:nth-child(2) { width: 130px; }
+
+        .admin-table th:nth-child(3),
+        .admin-table td:nth-child(3) { width: 110px; }
+
+        .admin-table th:nth-child(4),
+        .admin-table td:nth-child(4) { width: 180px; }
+
+        .admin-table th:nth-child(5),
+        .admin-table td:nth-child(5) { width: 100px; }
+
+        .admin-table th:nth-child(6),
+        .admin-table td:nth-child(6) { width: 250px; }
+
+        .admin-table th:nth-child(7),
+        .admin-table td:nth-child(7) { width: 150px; text-align: center; }
+
+        .admin-table th:nth-child(8),
+        .admin-table td:nth-child(8) { width: 150px; text-align: center; }
+
+        .admin-table th:nth-child(9),
+        .admin-table td:nth-child(9) { width: 150px; text-align: center; }
+
+        .admin-table th:nth-child(10),
+        .admin-table td:nth-child(10) { width: 170px; text-align: center; }
+
+        .info-text {
+            color: #276fb7;
+            font-weight: 800;
+        }
+
+        .seats-cell {
+            white-space: normal;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        .note-input {
+            width: 210px;
+            max-width: 100%;
+            height: 46px;
+            border: 2px solid #d5d5d5;
+            border-radius: 16px;
+            padding: 0 14px;
+            font-size: 15px;
+            color: #444;
+            outline: none;
+            background: #fff;
+        }
+
+        .cell-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .pill-btn {
+            height: 58px;
+            min-width: 120px;
+            padding: 0 18px;
+            border: none;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .pill-btn.orange {
+            background: #f26c41;
+            color: #fff;
+        }
+
+        .pill-btn.orange:hover {
+            background: #e95d31;
+        }
+
+        .pill-btn.red-outline {
+            background: #fff7f6;
+            color: #d84b3b;
+            border: 2px solid #f0a59a;
+        }
+
+        .pill-btn.red-outline:hover {
+            background: #fff0ed;
+        }
+
+        .pill-btn.gray {
+            background: #eeeeee;
+            color: #8f8f8f;
+        }
+
+        .pill-btn.green {
+            background: #e9f7ef;
+            color: #249167;
+        }
+
+        .pill-btn.blue {
+            background: #e7efff;
+            color: #356fcb;
+        }
+
+        .pill-btn.dark {
+            background: #333;
+            color: #fff;
+        }
+
+        .pill-btn.cyan {
+            background: #e7fbff;
+            color: #1493a5;
+            border: 2px solid #8adce7;
+        }
+
+        .pill-btn:disabled {
+            cursor: not-allowed;
+            opacity: 1;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #888;
+            font-size: 16px;
+            padding: 32px 20px;
+        }
+    </style>
+</head>
+<body class="admin-page">
+    <div class="admin-shell">
+        <div class="admin-topbar">
+            <div class="admin-title-wrap">
+                <h1>後台管理</h1>
+                <p>可搜尋訂單、切換鎖定狀態、付款狀態、取票狀態與刪除訂單</p>
+            </div>
+            <a href="/" class="back-link-btn">回到選位頁</a>
+        </div>
+
+        <div class="admin-search-card">
+            <input
+                id="admin-keyword-input"
+                class="admin-search-input"
+                type="text"
+                placeholder="輸入姓名或訂單ID"
+            />
+            <button id="admin-search-btn" class="admin-search-btn" type="button">查詢</button>
+        </div>
+
+        <div class="admin-table-card">
+            <div class="admin-table-scroll">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>訂單日期與時間</th>
+                            <th>訂單ID</th>
+                            <th>排數</th>
+                            <th>座位</th>
+                            <th>票價</th>
+                            <th>備註</th>
+                            <th>鎖定狀態</th>
+                            <th>刪除</th>
+                            <th>付款狀態</th>
+                            <th>取票狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-orders-tbody">
+                        <tr>
+                            <td colspan="10" class="empty-state">請先輸入姓名或訂單ID查詢</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PASSWORD = "ibibibib";
+        let authed = false;
+
+        function requirePassword() {
+            if (sessionStorage.getItem("admin_ok") === "1") {
+                authed = true;
+                return true;
+            }
+
+            const input = prompt("請輸入後台密碼");
+
+            if (input === ADMIN_PASSWORD) {
+                sessionStorage.setItem("admin_ok", "1");
+                authed = true;
+                return true;
+            }
+
+            alert("密碼錯誤");
+            document.body.innerHTML = `
+                <div style="
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: Arial, 'Noto Sans TC', sans-serif;
+                    background: linear-gradient(135deg, #0f3b3a, #4b1f11);
+                    color: white;
+                    font-size: 28px;
+                    font-weight: 800;
+                ">
+                    未授權
+                </div>
+            `;
+            return false;
+        }
+
+        let currentKeyword = "";
+
+        function escapeHtml(text) {
+            return String(text ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function lockButtonHtml(order) {
+            if (order.order_status === "locked") {
+                return `<button class="pill-btn dark" type="button" onclick="toggleLock('${escapeHtml(order.order_id)}')">鎖定</button>`;
+            }
+            return `<button class="pill-btn cyan" type="button" onclick="toggleLock('${escapeHtml(order.order_id)}')">開放刪除</button>`;
+        }
+
+        function deleteButtonHtml(order) {
+            if (order.order_status === "locked") {
+                return `<button class="pill-btn gray" type="button" disabled>已鎖定，無法刪除</button>`;
+            }
+            return `<button class="pill-btn red-outline" type="button" onclick="deleteOrder('${escapeHtml(order.order_id)}')">刪除</button>`;
+        }
+
+        function paymentButtonHtml(order) {
+            if (order.payment_done) {
+                return `<button class="pill-btn green" type="button" onclick="togglePayment('${escapeHtml(order.order_id)}')">已付款</button>`;
+            }
+            return `<button class="pill-btn gray" type="button" onclick="togglePayment('${escapeHtml(order.order_id)}')">未付款</button>`;
+        }
+
+        function pickupButtonHtml(order) {
+            if (order.picked_up) {
+                return `<button class="pill-btn blue" type="button" onclick="advancePickup('${escapeHtml(order.order_id)}')">已取</button>`;
+            }
+            if (order.pickup_open) {
+                return `<button class="pill-btn green" type="button" onclick="advancePickup('${escapeHtml(order.order_id)}')">已開放</button>`;
+            }
+            return `<button class="pill-btn gray" type="button" onclick="advancePickup('${escapeHtml(order.order_id)}')">未開放</button>`;
+        }
+
+        function renderAdminOrders(orders) {
+            const tbody = document.getElementById("admin-orders-tbody");
+            if (!tbody) return;
+
+            if (!orders.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">查無資料</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = orders.map(order => `
+                <tr>
+                    <td class="info-text">${escapeHtml(order.datetime)}</td>
+                    <td class="info-text">${escapeHtml(order.order_id)}</td>
+                    <td class="info-text">${escapeHtml(order.floor)}${escapeHtml(order.row_label)}排</td>
+                    <td class="info-text seats-cell">${order.seats.map(seat => `${seat}號`).join("、")}</td>
+                    <td class="info-text">$${order.price}</td>
+                    <td>
+                        <input
+                            id="admin-note-${escapeHtml(order.order_id)}"
+                            class="note-input"
+                            type="text"
+                            value="${escapeHtml(order.note || "")}"
+                            placeholder="備註"
+                        />
+                    </td>
+                    <td><div class="cell-center">${lockButtonHtml(order)}</div></td>
+                    <td><div class="cell-center">${deleteButtonHtml(order)}</div></td>
+                    <td><div class="cell-center">${paymentButtonHtml(order)}</div></td>
+                    <td><div class="cell-center">${pickupButtonHtml(order)}</div></td>
+                </tr>
+            `).join("");
+        }
+
+        async function searchAdminOrders() {
+            if (!authed) return;
+            const input = document.getElementById("admin-keyword-input");
+            const keyword = input.value.trim();
+
+            if (!keyword) {
+                alert("請輸入姓名或訂單ID");
+                return;
+            }
+
+            currentKeyword = keyword;
+
+            const res = await fetch(`/api/admin/orders?keyword=${encodeURIComponent(keyword)}`);
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                alert(data.message || "查詢失敗");
+                return;
+            }
+
+            renderAdminOrders(data.orders || []);
+        }
+
+        async function toggleLock(orderId) {
+            if (!authed) return;
+            const res = await fetch(`/api/admin/orders/${orderId}/lock`, {
+                method: "PATCH"
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                alert(data.message || "更新失敗");
+                return;
+            }
+            searchAdminOrders();
+        }
+
+        async function togglePayment(orderId) {
+            if (!authed) return;
+            const res = await fetch(`/api/admin/orders/${orderId}/payment`, {
+                method: "PATCH"
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                alert(data.message || "更新失敗");
+                return;
+            }
+            searchAdminOrders();
+        }
+
+        async function advancePickup(orderId) {
+            if (!authed) return;
+            const res = await fetch(`/api/admin/orders/${orderId}/pickup/advance`, {
+                method: "PATCH"
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                alert(data.message || "更新失敗");
+                return;
+            }
+            searchAdminOrders();
+        }
+
+        async function deleteOrder(orderId) {
+            if (!authed) return;
+            const ok = confirm("確定要刪除這筆訂單嗎？");
+            if (!ok) return;
+
+            const res = await fetch(`/api/admin/orders/${orderId}`, {
+                method: "DELETE"
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                alert(data.message || "刪除失敗");
+                return;
+            }
+            searchAdminOrders();
+        }
+
+        document.getElementById("admin-search-btn").addEventListener("click", searchAdminOrders);
+        document.getElementById("admin-keyword-input").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                searchAdminOrders();
+            }
+        });
+    
+        window.onload = () => {
+            requirePassword();
+        };
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,575 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, "Noto Sans TC", sans-serif;
+    background: linear-gradient(135deg, #0f3b3a, #4b1f11);
+    min-height: 100vh;
+    overflow: hidden;
+    padding: 6px;
+}
+
+.page-header {
+    height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.page-subtitle {
+    margin-top: 7px;
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.app-shell {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+    height: calc(100vh - 86px);
+}
+
+/* 左側主區 */
+.seat-card {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 28px;
+    padding: 14px 18px 18px 18px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.stage-box {
+    width: 100%;
+    max-width: 980px;
+    height: 62px;
+    border: 2px solid #d8d8d8;
+    background: #f3f3f3;
+    color: #333;
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+}
+
+.map-stage {
+    margin: 0 auto 18px auto;
+}
+
+/* 地圖區 */
+#map-viewport {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    cursor: grab;
+    user-select: none;
+    border-radius: 16px;
+    padding: 4px;
+    background: #fafafa;
+    position: relative;
+}
+
+#map-viewport.dragging {
+    cursor: grabbing;
+}
+
+#seat-map-scale {
+    position: relative;
+    width: fit-content;
+    height: fit-content;
+}
+
+#seat-map {
+    display: grid;
+    gap: 8px;
+    justify-content: start;
+    align-content: start;
+    padding: 10px 14px 24px 14px;
+    width: fit-content;
+    min-height: max-content;
+    transform-origin: top left;
+}
+
+/* Tooltip */
+.seat-tooltip {
+    position: absolute;
+    z-index: 20;
+    min-width: 180px;
+    max-width: 240px;
+    background: rgba(42, 42, 42, 0.96);
+    color: white;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    transform: translate(12px, 12px);
+}
+
+.seat-tooltip.hidden {
+    display: none;
+}
+
+.seat-tooltip .tooltip-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.seat-tooltip .tooltip-sub {
+    color: #d8d8d8;
+    font-size: 12px;
+}
+
+/* 樓層與排號 */
+.floor-label {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.row-label {
+    width: 28px;
+    height: 32px;
+    font-size: 12px;
+    color: #7b7b7b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    font-weight: 500;
+}
+
+/* 座位 */
+.seat {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    font-size: 11px;
+    line-height: 28px;
+    text-align: center;
+    padding: 0;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* 可選團內票 */
+.group-500 {
+    background: #cf6f6d;
+    color: white;
+}
+
+.group-300 {
+    background: #b9cf8c;
+    color: white;
+}
+
+.group-200 {
+    background: #9fc3ea;
+    color: white;
+}
+
+/* 不可選區域 */
+.staff,
+.camera,
+.wheelchair,
+.companion,
+.vip,
+.regular-500,
+.regular-300,
+.regular-200,
+.unknown {
+    background: #e4e4e4;
+    color: #9b9b9b;
+    cursor: not-allowed;
+}
+
+/* 已售 */
+.sold {
+    background: #767676;
+    color: white;
+    cursor: not-allowed;
+}
+
+/* 已選 */
+.selected {
+    outline: 3px solid #3949ab;
+    transform: scale(1.12);
+    box-shadow: 0 0 0 2px rgba(57, 73, 171, 0.15);
+}
+
+/* 浮動工具按鈕 */
+.map-floating-tools {
+    position: absolute;
+    top: 110px;
+    right: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 30;
+}
+
+.tool-btn {
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #444;
+    font-size: 22px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.tool-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+    background: #ffffff;
+}
+
+.tool-btn:active {
+    transform: scale(0.97);
+}
+
+.tool-icon,
+.tool-btn svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+}
+
+/* 右側 sidebar */
+.sidebar {
+    width: 300px;
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 24px;
+    padding: 20px 22px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar h2,
+.sidebar-subtitle,
+#zone-summary,
+#summary,
+#confirm-btn {
+    flex-shrink: 0;
+}
+
+.sidebar h2 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+}
+
+.sidebar-subtitle {
+    margin: 18px 0 10px 0;
+    font-size: 16px;
+    color: #444;
+}
+
+/* 已選座位清單 */
+#selected-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #444;
+    margin-bottom: 16px;
+    padding-right: 6px;
+}
+
+#selected-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+#selected-list::-webkit-scrollbar-thumb {
+    background: #d0d0d0;
+    border-radius: 999px;
+}
+
+#selected-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.selected-seat-item {
+    margin-bottom: 10px;
+    font-size: 15px;
+    color: #333;
+    line-height: 1.7;
+}
+
+.selected-seat-item span {
+    color: #666;
+    font-size: 13px;
+}
+
+/* 票區統計 */
+#zone-summary {
+    min-height: 70px;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #333;
+    margin-bottom: 14px;
+}
+
+.zone-summary-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+    font-size: 15px;
+}
+
+.zone-summary-item .zone-name {
+    color: #666;
+    font-size: 13px;
+}
+
+.zone-summary-item .zone-count {
+    font-weight: 700;
+    color: #222;
+    font-size: 15px;
+}
+
+/* 金額與按鈕 */
+#summary {
+    font-size: 18px;
+    font-weight: 700;
+    color: #e1633f;
+    margin-bottom: 16px;
+}
+
+#confirm-btn {
+    width: 100%;
+    height: 46px;
+    border: none;
+    border-radius: 12px;
+    background: #f26c41;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#confirm-btn:hover {
+    background: #e95d31;
+}
+
+.secondary-link-btn {
+    flex-shrink: 0;
+    margin-top: 10px;
+    width: 100%;
+    height: 44px;
+    border-radius: 12px;
+    border: 1.5px solid #e3e3e3;
+    background: #ffffff;
+    color: #444;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.secondary-link-btn:hover {
+    background: #f7f7f7;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.note-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.note-input {
+    width: 220px;
+    max-width: 100%;
+    height: 40px;
+    border: 1.5px solid #d7d7d7;
+    border-radius: 12px;
+    padding: 0 14px;
+    font-size: 14px;
+    outline: none;
+    background: #fff;
+}
+
+.note-input:focus {
+    border-color: #f26c41;
+    box-shadow: 0 0 0 3px rgba(242, 108, 65, 0.12);
+}
+
+.action-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.primary-mini-btn {
+    height: 40px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 12px;
+    background: #f26c41;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.primary-mini-btn:hover {
+    background: #e95d31;
+}
+
+.danger-btn {
+    height: 40px;
+    padding: 0 18px;
+    border: 1.5px solid #f2a29a;
+    border-radius: 12px;
+    background: #fff7f6;
+    color: #d84b3b;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.danger-btn:hover {
+    background: #fff0ed;
+}
+.pickup-btn {
+    height: 40px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: default;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.pickup-btn.closed {
+    background: #ececec;
+    color: #8b8b8b;
+}
+
+.pickup-btn.open {
+    background: #e8f7ef;
+    color: #239267;
+}
+
+.pickup-btn.done {
+    background: #e8f0ff;
+    color: #276fb7;
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: #fff2ec;
+    color: #f26c41;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.ranking-row-top {
+    background: #fff9f6;
+}
+
+.ranking-ticket {
+    color: #276fb7;
+    font-weight: 900;
+}
+
+.reward-condition-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.reward-condition-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #fff4ee;
+    border: 1px solid #f3d3c3;
+    color: #d66a3b;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.reward-main {
+    color: #222;
+    font-weight: 800;
+}
+
+.reward-count {
+    color: #276fb7;
+    font-weight: 900;
+    font-size: 16px;
+}
+
+.reward-names {
+    color: #666;
+    line-height: 1.7;
+}
+
+.reward-empty {
+    color: #aaa;
+}

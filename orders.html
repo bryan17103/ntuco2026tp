@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>《嶋聲》台北場訂單查詢</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body.orders-page {
+            margin: 0;
+            font-family: Arial, "Noto Sans TC", sans-serif;
+            background: linear-gradient(135deg, #0f3b3a, #4b1f11);
+            min-height: 100vh;
+            padding: 12px;
+        }
+
+        .orders-shell {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            min-height: calc(100vh - 24px);
+        }
+
+        .orders-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .orders-title-wrap h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #222;
+            font-weight: 800;
+        }
+
+        .orders-title-wrap p {
+            margin: 8px 0 0 0;
+            color: #7a7a7a;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .back-link-btn {
+            height: 44px;
+            padding: 0 20px;
+            border-radius: 16px;
+            border: 2px solid #dddddd;
+            background: #fff;
+            color: #4a4a4a;
+            font-size: 15px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .orders-search-card {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .orders-search-input {
+            width: 410px;
+            max-width: 100%;
+            height: 46px;
+            border: 2px solid #d8d8d8;
+            border-radius: 18px;
+            padding: 0 18px;
+            font-size: 15px;
+            outline: none;
+            background: #fff;
+        }
+
+        .orders-search-input:focus {
+            border-color: #f26c41;
+            box-shadow: 0 0 0 4px rgba(242, 108, 65, 0.12);
+        }
+
+        .orders-search-btn {
+            height: 46px;
+            padding: 0 24px;
+            border: none;
+            border-radius: 18px;
+            background: #f26c41;
+            color: white;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .orders-search-btn:hover {
+            background: #e95d31;
+        }
+
+        .orders-table-card {
+            border: 1.5px solid #e8e8e8;
+            border-radius: 26px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .orders-table-scroll {
+            overflow-x: auto;
+        }
+
+        table.orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            min-width: 100%;
+        }
+
+        .orders-table thead th {
+            background: #fafafa;
+            color: #2f2f2f;
+            font-size: 15px;
+            font-weight: 800;
+            text-align: left;
+            padding: 16px 16px;
+            border-bottom: 1px solid #ececec;
+            white-space: nowrap;
+        }
+
+        .orders-table tbody td {
+            padding: 14px 14px;
+            border-bottom: 1px solid #efefef;
+            vertical-align: middle;
+            font-size: 15px;
+        }
+
+        .orders-table tbody tr:last-child td {
+            border-bottom: none;
+            min-height: 88px;
+        }
+
+        .orders-table th:nth-child(1),
+        .orders-table td:nth-child(1) {
+            width: 160px;
+        }
+
+        .orders-table th:nth-child(2),
+        .orders-table td:nth-child(2) {
+            width: 110px;
+        }
+
+        .orders-table th:nth-child(3),
+        .orders-table td:nth-child(3) {
+            width: 110px;
+        }
+
+        .orders-table th:nth-child(4),
+        .orders-table td:nth-child(4) {
+            width: 180px;
+            white-space: normal;
+        word-break: break-word;
+        line-height: 1.5;
+        }
+
+        .orders-table th:nth-child(5),
+        .orders-table td:nth-child(5) {
+            width: 90px;
+        }
+
+        .orders-table th:nth-child(6),
+        .orders-table td:nth-child(6) {
+            width: 360px;
+        }
+
+        .orders-table th:nth-child(7),
+        .orders-table td:nth-child(7) {
+            width: 160px;
+            text-align: center;
+        }
+
+        .orders-table th:nth-child(8),
+        .orders-table td:nth-child(8) {
+            width: 210px;
+            text-align: center;
+        }
+
+        .order-strong {
+            color: #276fb7;
+            font-weight: 800;
+        }
+
+        .note-wrap {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .note-input {
+            width: 300px;
+            max-width: 100%;
+            height: 46px;
+            border: 2px solid #d5d5d5;
+            border-radius: 18px;
+            padding: 0 18px;
+            font-size: 15px;
+            color: #444;
+            outline: none;
+            background: #fff;
+        }
+
+        .note-input:focus {
+            border-color: #f26c41;
+            box-shadow: 0 0 0 4px rgba(242, 108, 65, 0.12);
+        }
+
+        .save-btn {
+            height: 46px;
+            min-width: 90px;
+            padding: 0 22px;
+            border: none;
+            border-radius: 18px;
+            background: #f26c41;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .save-btn:hover {
+            background: #e85d31;
+        }
+
+        .cell-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .delete-btn {
+            height: 46px;
+            min-width: 90px;
+            padding: 0 22px;
+            border: 2px solid #f0a59a;
+            border-radius: 18px;
+            background: #fff8f7;
+            color: #e45c4a;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .delete-btn:hover {
+            background: #fff2ef;
+        }
+
+        .delete-btn.locked {
+            height: 46px;
+            min-width: 90px;
+            padding: 0 22px;
+            border: 2px solid #dddddd;
+            border-radius: 18px;
+            background: #f3f3f3;
+            color: #9a9a9a;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: not-allowed;
+        }
+
+        .pickup-pill {
+            height: 58px;
+            min-width: 220px;
+            padding: 0 24px;
+            border: none;
+            border-radius: 999px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: default;
+            white-space: nowrap;
+        }
+        .pickup-pill.closed {
+            background: #eeeeee;
+            color: #8f8f8f;
+        }
+
+        .pickup-pill.open {
+            background: #e9f7ef;
+            color: #249167;
+        }
+
+        .pickup-pill.done {
+            background: #e7efff;
+            color: #356fcb;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #888;
+            font-size: 16px;
+            padding: 32px 20px;
+        }
+
+        .orders-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .summary-card {
+            background: #fff;
+            border: 1.5px solid #e8e8e8;
+            border-radius: 20px;
+            padding: 18px 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .summary-label {
+            font-size: 14px;
+            color: #7a7a7a;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #276fb7;
+            line-height: 1.1;
+        }
+
+        @media (max-width: 980px) {
+            .orders-summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
+</head>
+<body class="orders-page">
+    <div class="orders-shell">
+        <div class="orders-topbar">
+            <div class="orders-title-wrap">
+                <h1>《嶼聲》團內購票訂單查詢</h1>
+                <p>票務每天晚上都會上來鎖定，鎖定後即無法刪除！</p>
+            </div>
+            <a href="/" class="back-link-btn">回到選位頁</a>
+        </div>
+
+        <div class="orders-search-card">
+            <input
+                id="order-name-input"
+                class="orders-search-input"
+                type="text"
+                placeholder="請輸入姓名"
+            />
+            <button id="order-search-btn" class="orders-search-btn" type="button">
+                查詢
+            </button>
+        </div>
+
+        <div class="orders-summary-grid" id="orders-summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">已付金額</div>
+                <div class="summary-value" id="paid-amount">$0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">未付金額</div>
+                <div class="summary-value" id="unpaid-amount">$0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">已取票數</div>
+                <div class="summary-value" id="picked-count">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">未取票數</div>
+                <div class="summary-value" id="unpicked-count">0</div>
+            </div>
+        </div>
+
+        <div class="orders-table-card">
+            <div class="orders-table-scroll">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>訂單日期與時間</th>
+                            <th>訂單ID</th>
+                            <th>排數</th>
+                            <th>座位</th>
+                            <th>票價</th>
+                            <th>備註</th>
+                            <th>刪除</th>
+                            <th>取票狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-tbody">
+                        <tr>
+                            <td colspan="8" class="empty-state">請先輸入姓名查詢訂單</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSearchName = "";
+
+        function escapeHtml(text) {
+            return String(text ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function pickupStatusHtml(order) {
+            const paymentText = order.payment_done ? "已付款" : "未付款";
+
+            let pickupText = "尚未開放取票";
+            if (order.picked_up) {
+                pickupText = "已取票";
+            } else if (order.pickup_open) {
+                pickupText = "已開放取票";
+            }
+
+            return `<button class="pickup-pill ${pickupClass(order)}" type="button">${paymentText}｜${pickupText}</button>`;
+        }
+
+        function pickupClass(order) {
+            if (order.picked_up) return "done";
+            if (order.pickup_open) return "open";
+            return "closed";
+        }
+
+        function formatMoney(value) {
+            return `$${value.toLocaleString()}`;
+        }
+
+        function updateOrdersSummary(orders) {
+            let paidAmount = 0;
+            let unpaidAmount = 0;
+            let pickedCount = 0;
+            let unpickedCount = 0;
+
+            for (const order of orders) {
+                const price = Number(order.price || 0);
+                const seatCount = Array.isArray(order.seats) ? order.seats.length : 0;
+
+                if (order.payment_done) {
+                    paidAmount += price;
+                } else {
+                    unpaidAmount += price;
+                }
+
+                if (order.picked_up) {
+                    pickedCount += seatCount;
+                } else {
+                    unpickedCount += seatCount;
+                }
+            }
+
+            document.getElementById("paid-amount").textContent = formatMoney(paidAmount);
+            document.getElementById("unpaid-amount").textContent = formatMoney(unpaidAmount);
+            document.getElementById("picked-count").textContent = pickedCount;
+            document.getElementById("unpicked-count").textContent = unpickedCount;
+        }
+
+        function renderOrdersTable(orders) {
+            const tbody = document.getElementById("orders-tbody");
+            if (!tbody) return;
+
+            if (!orders.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty-state">查無資料</td>
+                    </tr>
+                `;
+                updateOrdersSummary([]);
+                return;
+            }
+
+            tbody.innerHTML = orders.map(order => `
+                <tr>
+                    <td class="order-strong">${escapeHtml(order.datetime)}</td>
+                    <td class="order-strong">${escapeHtml(order.order_id)}</td>
+                    <td class="order-strong">${escapeHtml(order.floor)}${escapeHtml(order.row_label)}排</td>
+                    <td class="order-strong">${order.seats.map(seat => `${seat}`).join("、")}</td>
+                    <td class="order-strong">$${order.price}</td>
+                    <td>
+                        <div class="note-wrap">
+                            <input
+                                id="note-${escapeHtml(order.order_id)}"
+                                class="note-input"
+                                type="text"
+                                value="${escapeHtml(order.note || "")}"
+                                placeholder="自行輸入備註"
+                            />
+                            <button class="save-btn" type="button" onclick="saveNote('${escapeHtml(order.order_id)}')">
+                                儲存
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="cell-center">
+                            ${
+                                order.order_status === "locked"
+                                    ? `<button class="delete-btn locked" type="button" disabled title="已鎖定！">已鎖定！</button>`
+                                    : `<button class="delete-btn" type="button" onclick="deleteOrder('${escapeHtml(order.order_id)}')">刪除</button>`
+                            }
+                        </div>
+                    </td>
+                    <td>
+                        <div class="cell-center">
+                            ${pickupStatusHtml(order)}
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        async function searchOrders() {
+            const input = document.getElementById("order-name-input");
+            const name = input.value.trim();
+
+            if (!name) {
+                alert("請輸入姓名");
+                return;
+            }
+
+            currentSearchName = name;
+
+            const res = await fetch(`/api/orders?name=${encodeURIComponent(name)}`);
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                alert(data.message || "查詢失敗");
+                return;
+            }
+
+            const orders = data.orders || [];
+            renderOrdersTable(orders);
+            updateOrdersSummary(orders);
+        }
+
+        async function saveNote(orderId) {
+            const input = document.getElementById(`note-${orderId}`);
+            const note = input ? input.value.trim() : "";
+
+            const res = await fetch(`/api/orders/${orderId}/note`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ note })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                alert(data.message || "更新失敗");
+                return;
+            }
+
+            alert("備註已更新");
+            if (currentSearchName) {
+                searchOrders();
+            }
+        }
+
+        async function deleteOrder(orderId) {
+            const ok = confirm("確定要刪除這筆訂單嗎？刪除後座位會重新釋出。");
+            if (!ok) return;
+
+            const res = await fetch(`/api/orders/${orderId}`, {
+                method: "DELETE"
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                alert(data.message || "刪除失敗");
+                return;
+            }
+
+            alert(data.message || "刪除成功");
+            if (currentSearchName) {
+                searchOrders();
+            }
+        }
+
+        document.getElementById("order-search-btn").addEventListener("click", searchOrders);
+        document.getElementById("order-name-input").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                searchOrders();
+            }
+        });
+    </script>
+</body>
+</html>

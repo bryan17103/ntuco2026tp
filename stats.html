@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>《嶋聲》台北場推票統計</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, "Noto Sans TC", sans-serif;
+            background: linear-gradient(135deg, #0f3b3a, #4b1f11);
+            min-height: 100vh;
+            padding: 12px;
+        }
+
+        .stats-shell {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 28px;
+            padding: 28px 28px 32px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            min-height: calc(100vh - 24px);
+        }
+
+        .stats-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stats-title-wrap h1 {
+            margin: 0;
+            font-size: 30px;
+            font-weight: 900;
+            color: #222;
+        }
+
+        .stats-title-wrap p {
+            margin: 8px 0 0 0;
+            color: #7a7a7a;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .back-link-btn {
+            height: 44px;
+            padding: 0 18px;
+            border-radius: 14px;
+            border: 1.5px solid #dddddd;
+            background: #fff;
+            color: #444;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .back-link-btn:hover {
+            background: #f7f7f7;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(260px, 320px));
+            gap: 16px;
+            margin-bottom: 24px;
+            justify-content: start;
+        }
+
+        .hero-card,
+        .panel-card,
+        .section-card {
+            background: #fff;
+            border: 1.5px solid #e8e8e8;
+            border-radius: 22px;
+            padding: 20px;
+        }
+
+        .hero-label {
+            font-size: 14px;
+            color: #7a7a7a;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .hero-progress-main {
+            font-size: 36px;
+            font-weight: 900;
+            color: #f26c41;
+            line-height: 1.05;
+        }
+
+        .hero-progress-target {
+            font-size: 20px;
+            color: #979797;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+
+        .hero-money-main {
+            font-size: 36px;
+            font-weight: 900;
+            color: #276fb7;
+            line-height: 1.05;
+        }
+
+        .panel-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: #222;
+            margin-bottom: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 13px 10px;
+            border-bottom: 1px solid #eeeeee;
+            text-align: left;
+            font-size: 15px;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #fafafa;
+            font-weight: 900;
+            color: #333;
+            white-space: nowrap;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            background: #fff2ec;
+            color: #f26c41;
+            font-weight: 900;
+            font-size: 14px;
+        }
+
+        .ranking-row-top {
+            background: #fff9f6;
+        }
+
+        .ranking-name {
+            color: #222;
+            font-weight: 700;
+        }
+
+        .ranking-section {
+            color: #7a7a7a;
+            font-weight: 700;
+        }
+
+        .ranking-ticket {
+            color: #276fb7;
+            font-weight: 900;
+            font-size: 17px;
+        }
+
+        .special-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 4px;
+        }
+
+        .special-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: #fafafa;
+            border: 1px solid #efefef;
+        }
+
+        .special-name {
+            color: #444;
+            font-weight: 700;
+        }
+
+        .special-value {
+            color: #276fb7;
+            font-weight: 900;
+            font-size: 20px;
+        }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, 220px);
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .section-card {
+            width: 220px;
+            padding: 18px 16px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: #222;
+            margin-bottom: 14px;
+        }
+
+        .member-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .member-name {
+            color: #333;
+            min-width: 0;
+            word-break: break-word;
+        }
+
+        .member-count {
+            color: #276fb7;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        .subtotal {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed #ccc;
+            font-weight: 900;
+            color: #222;
+        }
+
+        .reward-condition-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .reward-condition-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 32px;
+            padding: 0 12px;
+            border-radius: 999px;
+            background: #fff4ee;
+            border: 1px solid #f3d3c3;
+            color: #d66a3b;
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .reward-main {
+            color: #222;
+            font-weight: 900;
+        }
+
+        .reward-count {
+            color: #276fb7;
+            font-weight: 900;
+            font-size: 16px;
+        }
+
+        .reward-names {
+            color: #666;
+            line-height: 1.7;
+        }
+
+        .reward-empty,
+        .empty-text {
+            color: #aaaaaa;
+            font-size: 14px;
+        }
+
+        @media (max-width: 1280px) {
+            .panel-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 960px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-shell {
+                padding: 18px;
+            }
+
+            .section-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+
+            .section-card {
+                width: auto;
+            }
+        }
+
+        .chart-wrap {
+            width: 100%;
+            max-width: 360px;
+            margin: 0 auto;
+            padding-top: 8px;
+        }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, 220px);
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="stats-shell">
+        <div class="stats-topbar">
+            <div class="stats-title-wrap">
+                <h1>《嶋聲》台北場推票統計</h1>
+                <p>衝啊啊啊啊啊啊啊啊🔥</p>
+            </div>
+
+            <a href="/" class="back-link-btn">回到選位頁</a>
+        </div>
+
+        <div class="hero-grid" id="overview-grid"></div>
+
+        <div class="panel-grid">
+            <div class="panel-card">
+                <div class="card-title">個人推票排行榜</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>姓名</th>
+                            <th>聲部</th>
+                            <th>推票數</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-body"></tbody>
+                </table>
+            </div>
+
+            <div class="panel-card">
+                <div class="card-title">各組購票分佈</div>
+                <div class="chart-wrap">
+                    <canvas id="section-pie-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="section-grid" id="section-grid"></div>
+
+        <div class="panel-card">
+            <div class="card-title">本次推票獎勵統計</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>獎勵</th>
+                        <th>條件</th>
+                        <th>達成人數</th>
+                        <th>達成人名單</th>
+                    </tr>
+                </thead>
+                <tbody id="reward-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function formatMoney(v) {
+            return `$${Number(v || 0).toLocaleString()}`;
+        }
+
+        async function loadStats() {
+            const res = await fetch("/api/stats");
+            const result = await res.json();
+
+            if (!result.success) {
+                alert(result.message || "統計讀取失敗");
+                return;
+            }
+
+            const data = result.data;
+            renderOverview(data.overview);
+            renderRanking(data.ranking);
+            renderSections(data.sections);
+            renderRewards(data.rewards);
+            renderSectionChart(data.section_chart);
+        }
+
+        let sectionPieChart = null;
+
+        function renderSectionChart(sectionChart) {
+            const canvas = document.getElementById("section-pie-chart");
+            if (!canvas) return;
+
+            const labels = sectionChart.map(item => item.section);
+            const values = sectionChart.map(item => item.tickets);
+
+            const colors = [
+                "#6FA8DC", // 吹管
+                "#F6B26B", // 彈撥
+                "#93C47D", // 拉弦
+                "#8E7CC3", // 低音
+                "#E06666", // 打擊
+                "#76A5AF", // 特殊來源
+            ];
+
+            if (sectionPieChart) {
+                sectionPieChart.destroy();
+            }
+
+            sectionPieChart = new Chart(canvas, {
+                type: "pie",
+                data: {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderColor: "#ffffff",
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: "bottom",
+                            labels: {
+                                boxWidth: 14,
+                                padding: 16,
+                                font: {
+                                    size: 14,
+                                    weight: "700"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const value = context.raw;
+                                    const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${context.label}：${value} 張（${percent}%）`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderOverview(overview) {
+            document.getElementById("overview-grid").innerHTML = `
+                <div class="hero-card">
+                    <div class="hero-label">推票進度</div>
+                    <div class="hero-progress-main">
+                        ${overview.total_tickets}
+                        <span class="hero-progress-target">/ ${overview.target_tickets || 0}</span>
+                    </div>
+                </div>
+
+                <div class="hero-card">
+                    <div class="hero-label">累積總金額</div>
+                    <div class="hero-money-main">${formatMoney(overview.total_amount)}</div>
+                </div>
+            `;
+        }
+
+        function renderRanking(ranking) {
+            if (!ranking.length) {
+                document.getElementById("ranking-body").innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-text">目前尚無資料</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            document.getElementById("ranking-body").innerHTML = ranking.map((item, i) => `
+                <tr class="${i < 3 ? 'ranking-row-top' : ''}">
+                    <td><span class="rank-badge">${i + 1}</span></td>
+                    <td class="ranking-name">${item.name}</td>
+                    <td class="ranking-section">${item.section}</td>
+                    <td class="ranking-ticket">${item.tickets}</td>
+                </tr>
+            `).join("");
+        }
+
+        function renderSections(sections) {
+            document.getElementById("section-grid").innerHTML = sections.map(section => `
+                <div class="section-card">
+                    <div class="section-title">${section.section}</div>
+                    ${
+                        section.members.length
+                            ? section.members.map(m => `
+                                <div class="member-line">
+                                    <span class="member-name">${m.name}</span>
+                                    <span class="member-count">${m.tickets}</span>
+                                </div>
+                            `).join("")
+                            : `<div class="empty-text">目前尚無資料</div>`
+                    }
+                    <div class="subtotal">小計：${section.subtotal}</div>
+                </div>
+            `).join("");
+        }
+
+        function renderConditionChips(requirementText) {
+            if (!requirementText) return `<span class="reward-empty">—</span>`;
+
+            const parts = requirementText.split(" + ").map(part => part.trim()).filter(Boolean);
+
+            return `
+                <div class="reward-condition-wrap">
+                    ${parts.map(part => `<span class="reward-condition-chip">${part}</span>`).join("")}
+                </div>
+            `;
+        }
+
+        function renderRewards(rewards) {
+            if (!rewards.length) {
+                document.getElementById("reward-body").innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-text">尚未設定獎勵規則</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            document.getElementById("reward-body").innerHTML = rewards.map(r => `
+                <tr>
+                    <td class="reward-main">${r.reward}</td>
+                    <td>${renderConditionChips(r.requirement)}</td>
+                    <td class="reward-count">${r.count}</td>
+                    <td class="reward-names">${r.names.length ? r.names.join("、") : "—"}</td>
+                </tr>
+            `).join("");
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>

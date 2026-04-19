@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>《嶋聲》團內購票系統｜台北場</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header class="page-header">
+        <div class="page-title">《嶋聲》團內購票系統｜台北場</div>
+        <div class="page-subtitle">NTUCO 2026 Summer concert in Taipei</div>
+        <div class="page-subtitle">團內購票截止時間：2026/07/10 23:59</div>
+    </header>
+
+    <div class="app-shell">
+        <main class="seat-card">
+            <div class="map-floating-tools">
+                <button type="button" id="zoom-in-btn" class="tool-btn" title="放大">
+                    <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
+                        <circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+                        <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+                        <line x1="10" y1="7.3" x2="10" y2="12.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+                        <line x1="7.3" y1="10" x2="12.7" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+                    </svg>
+                </button>
+
+                <button type="button" id="zoom-out-btn" class="tool-btn" title="縮小">
+                    <svg viewBox="0 0 24 24" class="tool-icon" aria-hidden="true">
+                        <circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+                        <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+                        <line x1="7.3" y1="10" x2="12.7" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div id="map-viewport">
+                <div id="seat-map-scale">
+                    <div class="stage-box map-stage">舞台</div>
+                    <div id="seat-map"></div>
+                </div>
+                <div id="seat-tooltip" class="seat-tooltip hidden"></div>
+            </div>
+        </main>
+
+        <aside class="sidebar">
+            <h2>已選座位</h2>
+            <div id="selected-list">尚未選擇</div>
+
+            <h3 class="sidebar-subtitle">票區統計</h3>
+            <div id="zone-summary">尚未選擇</div>
+
+            <div id="summary">總金額：$0</div>
+
+            <button id="confirm-btn" type="button">確認選位</button>
+            <a href="/orders" class="secondary-link-btn">查詢 / 管理訂單</a>
+            <a href="/stats" class="secondary-link-btn">推票總統計</a>
+        </aside>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>
