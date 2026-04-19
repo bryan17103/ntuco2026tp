@@ -574,6 +574,15 @@ def load_section_members():
 
     return member_to_section
 
+def price_to_reward_zone(price: int) -> str:
+    if price in {500, 400}:
+        return "500"
+    if price in {300, 240}:
+        return "300"
+    if price in {200, 160}:
+        return "200"
+    return str(price)
+    
 def build_stats_summary():
     rows = get_all_records()
     member_to_section = load_section_members()
@@ -626,7 +635,8 @@ def build_stats_summary():
             unpicked_tickets += 1
 
         person_ticket_count[name] += 1
-        person_zone_counts[name][str(price)] += 1
+        reward_zone = price_to_reward_zone(price)
+        person_zone_counts[name][reward_zone] += 1
 
         section = member_to_section.get(name, "未分類")
         section_ticket_count[section] += 1
