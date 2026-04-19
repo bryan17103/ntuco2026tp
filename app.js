@@ -1,7 +1,7 @@
 let seatData = [];
 let rowLabels = {};
 let selectedSeats = new Set();
-let zoomLevel = 1.0;
+let zoomLevel = window.innerWidth <= 900 ? 1.25 : 1.0;
 
 let seatMapBaseWidth = 0;
 let seatMapBaseHeight = 0;
