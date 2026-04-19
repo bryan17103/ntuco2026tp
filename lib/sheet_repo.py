@@ -309,18 +309,27 @@ def get_orders_by_name(name: str) -> List[dict]:
 
 
 def update_order_note(order_id: str, note: str) -> bool:
-
     ws = get_worksheet()
     all_values = ws.get_all_values()
 
+    target_order_id = normalize_text(order_id)
     updated_any = False
+
     for row_idx in range(2, len(all_values) + 1):
         row = all_values[row_idx - 1]
-        current_order_id = normalize_text(row[1] if len(row) > 1 else "")  # B
-        status = normalize_text(row[2] if len(row) > 2 else "").lower()    # C
 
-        if current_order_id == order_id and status == "active":
-            ws.update_cell(row_idx, 9, note)  # I 訂單備註
+        current_order_id = normalize_text(row[1] if len(row) > 1 else "")
+        status = normalize_text(row[2] if len(row) > 2 else "").lower()
+
+        print(
+            "DEBUG compare:",
+            "target=", repr(target_order_id),
+            "current=", repr(current_order_id),
+            "status=", repr(status)
+        )
+
+        if current_order_id == target_order_id and status in {"active", "locked"}:
+            ws.update_cell(row_idx, 9, note)
             updated_any = True
 
     return updated_any
