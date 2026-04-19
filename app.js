@@ -6,7 +6,7 @@ let zoomLevel = window.innerWidth <= 900 ? 1.25 : 1.0;
 let seatMapBaseWidth = 0;
 let seatMapBaseHeight = 0;
 
-const SECOND_FLOOR_START_ROW = 33; // 依你目前 Excel 結構，2樓大約從這裡開始
+const SECOND_FLOOR_START_ROW = 33; 
 
 async function loadSeats() {
     const res = await fetch("/api/seats");
@@ -401,7 +401,7 @@ function setupConfirmButton() {
             return;
         }
 
-        const name = prompt("請輸入姓名");
+        const name = prompt("請輸入姓名（點擊OK後請等一下下><）");
         if (!name) return;
 
         const res = await fetch("/api/confirm", {
