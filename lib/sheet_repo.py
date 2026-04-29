@@ -51,6 +51,7 @@ HEADERS = [
     "是否開放取票",  # J
     "是否已取票",    # K
     "付款狀態",      # L
+    "是否已調票", #M
 ]
 
 # ===== caches =====
@@ -84,7 +85,7 @@ def ensure_headers() -> None:
     ws = get_worksheet()
     current = ws.row_values(1)
     if current != HEADERS:
-        ws.update("A1:L1", [HEADERS])
+        ws.update("A1:M1", [HEADERS])
 
 
 def now_str() -> str:
@@ -170,6 +171,7 @@ def append_order_rows(name: str, seat_rows: List[Dict]) -> str:
             False,                      # J 是否開放取票
             False,                      # K 是否已取票
             False,                      # L 付款狀態
+            False,                      # M 調票
         ])
 
     if values:
@@ -389,6 +391,7 @@ def admin_search_orders(keyword: str) -> List[dict]:
         pickup_open = normalize_bool(row.get("是否開放取票"))
         picked_up = normalize_bool(row.get("是否已取票"))
         payment_done = normalize_bool(row.get("付款狀態"))
+        ticket_adjusted = normalize_bool(row.get("是否已調票"))
 
         key = (order_id, dt, floor, row_label)
 
@@ -406,6 +409,7 @@ def admin_search_orders(keyword: str) -> List[dict]:
                 "picked_up": picked_up,
                 "payment_done": payment_done,
                 "order_status": status,
+                "ticket_adjusted": ticket_adjusted,
             }
 
         if seat_number is not None:
@@ -421,6 +425,8 @@ def admin_search_orders(keyword: str) -> List[dict]:
             grouped[key]["picked_up"] = True
         if payment_done:
             grouped[key]["payment_done"] = True
+        if ticket_adjusted:
+            grouped[key]["ticket_adjusted"] = True
 
     results = list(grouped.values())
 
@@ -486,7 +492,33 @@ def admin_toggle_payment_status(order_id: str):
         ws.update_cell(row_idx, 12, bool(new_value))
 
     return True, "付款狀態已更新"
+    
+def admin_toggle_ticket_adjusted_status(order_id: str):
+    ws = get_worksheet()
+    all_values = ws.get_all_values()
 
+    target_rows = []
+    current_adjusted = False
+
+    for row_idx in range(2, len(all_values) + 1):
+        row = all_values[row_idx - 1]
+        current_order_id = normalize_text(row[1] if len(row) > 1 else "")
+        adjusted = normalize_bool(row[12] if len(row) > 12 else "")  # M
+
+        if normalize_text(current_order_id) == normalize_text(order_id):
+            target_rows.append(row_idx)
+            current_adjusted = adjusted
+
+    if not target_rows:
+        return False, "找不到訂單"
+
+    new_value = not current_adjusted
+
+    for row_idx in target_rows:
+        ws.update_cell(row_idx, 13, bool(new_value))  # M
+
+    return True, "調票狀態已更新"
+    
 def admin_advance_pickup_status(order_id: str):
     ws = get_worksheet()
     all_values = ws.get_all_values()
