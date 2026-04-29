@@ -365,6 +365,7 @@ def update_order_pickup_status(order_id: str, pickup_open: bool = None, picked_u
 
 def admin_search_orders(keyword: str) -> List[dict]:
 
+    target = normalize_text(keyword)
     rows = get_all_records()
     grouped = {}
 
