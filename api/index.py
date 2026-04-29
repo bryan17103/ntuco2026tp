@@ -216,14 +216,32 @@ def api_update_order_pickup(order_id):
 
 @app.route("/api/admin/login", methods=["POST"])
 def api_admin_login():
-    data = request.get_json(silent=True) or {}
-    password = str(data.get("password", ""))
+    try:
+        data = request.get_json(silent=True) or {}
+        password = str(data.get("password", ""))
 
-    if password == os.environ.get("ADMIN_PASSWORD"):
-        session["admin_ok"] = True
-        return jsonify({"success": True})
+        admin_password = os.environ.get("ADMIN_PASSWORD")
 
-    return jsonify({"success": False, "message": "你不是票務！"}), 401
+        if not admin_password:
+            return jsonify({
+                "success": False,
+                "message": "後台密碼尚未設定"
+            }), 500
+
+        if password == admin_password:
+            session["admin_ok"] = True
+            return jsonify({"success": True})
+
+        return jsonify({
+            "success": False,
+            "message": "你不是票務 :("
+        }), 401
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
 
 def require_admin(fn):
     @wraps(fn)
