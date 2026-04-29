@@ -817,35 +817,67 @@ def format_reward_conditions(conditions: dict) -> str:
 
     return " + ".join(parts)
 
-def worksheet_to_csv_text(sheet_name: str) -> str:
-    ws = get_config_worksheet(sheet_name)
-    values = ws.get_all_values()
+def get_section_members_rows():
+    ws = get_config_worksheet("section_members")
+    rows = ws.get_all_records()
 
-    lines = []
-    for row in values[1:]:  # 跳過標題列
-        if not any(normalize_text(cell) for cell in row):
+    return [
+        {
+            "name": normalize_text(row.get("姓名")),
+            "section": normalize_text(row.get("聲部")),
+        }
+        for row in rows
+        if normalize_text(row.get("姓名")) or normalize_text(row.get("聲部"))
+    ]
+
+
+def get_stats_config_rows():
+    ws = get_config_worksheet("stats_config")
+    rows = ws.get_all_records()
+
+    return [
+        {
+            "type": normalize_text(row.get("類型")),
+            "name": normalize_text(row.get("名稱")),
+            "condition": normalize_text(row.get("條件")),
+        }
+        for row in rows
+        if normalize_text(row.get("類型")) or normalize_text(row.get("名稱")) or normalize_text(row.get("條件"))
+    ]
+
+
+def save_section_members_rows(rows):
+    ws = get_config_worksheet("section_members")
+
+    values = [["姓名", "聲部"]]
+
+    for row in rows:
+        name = normalize_text(row.get("name"))
+        section = normalize_text(row.get("section"))
+
+        if not name and not section:
             continue
-        lines.append(",".join(normalize_text(cell) for cell in row))
 
-    return "\n".join(lines)
-
-
-def replace_worksheet_from_csv_text(sheet_name: str, headers: List[str], text: str) -> None:
-    ws = get_config_worksheet(sheet_name)
-
-    rows = [headers]
-
-    for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if not line:
-            continue
-
-        parts = [x.strip() for x in line.split(",")]
-
-        while len(parts) < len(headers):
-            parts.append("")
-
-        rows.append(parts[:len(headers)])
+        values.append([name, section])
 
     ws.clear()
-    ws.update("A1", rows)
+    ws.update("A1", values)
+
+
+def save_stats_config_rows(rows):
+    ws = get_config_worksheet("stats_config")
+
+    values = [["類型", "名稱", "條件"]]
+
+    for row in rows:
+        row_type = normalize_text(row.get("type"))
+        name = normalize_text(row.get("name"))
+        condition = normalize_text(row.get("condition"))
+
+        if not row_type and not name and not condition:
+            continue
+
+        values.append([row_type, name, condition])
+
+    ws.clear()
+    ws.update("A1", values)
