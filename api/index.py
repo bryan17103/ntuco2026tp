@@ -17,6 +17,7 @@ from lib.sheet_repo import (
     admin_toggle_lock_status,
     admin_toggle_payment_status,
     admin_advance_pickup_status,
+    admin_toggle_ticket_adjusted_status,
     admin_delete_order,
     build_stats_summary,
     get_all_records,
@@ -266,7 +267,14 @@ def api_admin_orders():
         "orders": orders
     })
 
-
+@app.route("/api/admin/orders/<order_id>/ticket-adjusted", methods=["PATCH"])
+@require_admin
+def api_admin_ticket_adjusted(order_id):
+    ok, message = admin_toggle_ticket_adjusted_status(order_id)
+    if not ok:
+        return jsonify({"success": False, "message": message}), 404
+    return jsonify({"success": True, "message": message})
+    
 @app.route("/api/admin/orders/<order_id>/lock", methods=["PATCH"])
 @require_admin
 def api_admin_lock(order_id):
