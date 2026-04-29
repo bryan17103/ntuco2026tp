@@ -321,11 +321,6 @@
         let authed = false;
 
         async function requirePassword() {
-            if (sessionStorage.getItem("admin_ok") === "1") {
-                authed = true;
-                return true;
-            }
-        
             const input = prompt("請輸入後台密碼");
             if (!input) return false;
         
@@ -337,7 +332,17 @@
                 body: JSON.stringify({ password: input })
             });
         
-            const data = await res.json();
+            const raw = await res.text();
+            console.log("login status:", res.status);
+            console.log("login raw:", raw);
+        
+            let data = {};
+            try {
+                data = JSON.parse(raw);
+            } catch (e) {
+                alert(`登入 API 回傳不是 JSON：${res.status}\n${raw}`);
+                return false;
+            }
         
             if (res.ok && data.success) {
                 sessionStorage.setItem("admin_ok", "1");
@@ -345,23 +350,7 @@
                 return true;
             }
         
-            alert(data.message || "你不是票務 :(");
-        
-            document.body.innerHTML = `
-                <div style="
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-family: Arial, 'Noto Sans TC', sans-serif;
-                    background: linear-gradient(135deg, #0f3b3a, #4b1f11);
-                    color: white;
-                    font-size: 28px;
-                    font-weight: 800;
-                ">
-                    你不是票務 :(
-                </div>
-            `;
+            alert(data.message || `登入失敗：${res.status}`);
             return false;
         }
 
