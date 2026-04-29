@@ -3,9 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>修改資料</title>
+  <title>《嶋聲》修改資料</title>
+
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -20,7 +23,7 @@
       border-radius: 28px;
       padding: 24px;
       min-height: calc(100vh - 24px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
     }
 
     .edit-topbar {
@@ -32,18 +35,25 @@
       margin-bottom: 22px;
     }
 
-    h1 {
+    .edit-title-wrap h1 {
       margin: 0;
       font-size: 28px;
       font-weight: 900;
       color: #222;
     }
 
-    .hint {
+    .edit-title-wrap p {
       margin: 8px 0 0;
       color: #777;
       font-size: 14px;
       line-height: 1.6;
+      font-weight: 500;
+    }
+
+    .top-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .back-link-btn {
@@ -59,12 +69,14 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      white-space: nowrap;
     }
 
     .edit-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 18px;
+      align-items: start;
     }
 
     .edit-card {
@@ -72,119 +84,238 @@
       border: 1.5px solid #e8e8e8;
       border-radius: 24px;
       padding: 18px;
+      overflow: hidden;
     }
 
     .card-title {
       font-size: 20px;
       font-weight: 900;
-      margin-bottom: 8px;
       color: #222;
+      margin-bottom: 8px;
     }
 
     .card-desc {
       font-size: 13px;
       color: #777;
       line-height: 1.6;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
-    textarea {
+    .table-scroll {
+      overflow-x: auto;
+      border: 1.5px solid #eee;
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    table.edit-table {
       width: 100%;
-      min-height: 520px;
-      resize: vertical;
-      border: 2px solid #ddd;
-      border-radius: 16px;
-      padding: 14px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 14px;
-      line-height: 1.6;
-      outline: none;
+      border-collapse: collapse;
+      min-width: 520px;
     }
 
-    textarea:focus {
+    .edit-table th {
+      background: #fafafa;
+      color: #333;
+      font-size: 14px;
+      font-weight: 900;
+      text-align: center;
+      padding: 13px 10px;
+      border-bottom: 1px solid #eee;
+      white-space: nowrap;
+    }
+
+    .edit-table td {
+      padding: 10px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: middle;
+    }
+
+    .edit-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .cell-input {
+      width: 100%;
+      height: 40px;
+      border: 1.5px solid #ddd;
+      border-radius: 12px;
+      padding: 0 12px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+
+    .cell-input:focus {
       border-color: #f26c41;
-      box-shadow: 0 0 0 4px rgba(242, 108, 65, 0.12);
+      box-shadow: 0 0 0 3px rgba(242, 108, 65, 0.12);
+    }
+
+    .delete-row-btn {
+      height: 38px;
+      min-width: 72px;
+      border: 1.5px solid #f0a59a;
+      border-radius: 12px;
+      background: #fff7f6;
+      color: #d84b3b;
+      font-weight: 800;
+      cursor: pointer;
     }
 
     .action-row {
       display: flex;
       gap: 10px;
-      margin-top: 12px;
+      margin-top: 14px;
       flex-wrap: wrap;
     }
 
-    button {
+    .primary-btn,
+    .secondary-btn {
       height: 44px;
       padding: 0 20px;
       border: none;
       border-radius: 14px;
-      background: #f26c41;
-      color: white;
       font-size: 15px;
       font-weight: 800;
       cursor: pointer;
     }
 
-    button.secondary {
+    .primary-btn {
+      background: #f26c41;
+      color: white;
+    }
+
+    .secondary-btn {
       background: #eee;
       color: #444;
     }
 
-    @media (max-width: 900px) {
+    .status-text {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #777;
+      min-height: 18px;
+    }
+
+    .status-text.success {
+      color: #249167;
+      font-weight: 700;
+    }
+
+    .status-text.error {
+      color: #d84b3b;
+      font-weight: 700;
+    }
+
+    @media (max-width: 980px) {
       .edit-grid {
         grid-template-columns: 1fr;
       }
 
-      textarea {
-        min-height: 360px;
+      .edit-shell {
+        padding: 18px;
       }
     }
   </style>
 </head>
+
 <body>
   <div class="edit-shell">
     <div class="edit-topbar">
-      <div>
+      <div class="edit-title-wrap">
         <h1>修改資料</h1>
-        <p class="hint">
-          這裡會直接修改 Google Sheet 的 section_members 與 stats_config 分頁。<br>
-          修改後統計頁會直接讀取最新資料。
+        <p>
+          這裡會直接修改 Google Sheet 的 section_members 與 stats_config 分頁。<br />
+          修改後統計頁會直接讀取最新資料，不需要重新部署。
         </p>
       </div>
-      <a href="/admin" class="back-link-btn">回到後台</a>
+
+      <div class="top-actions">
+        <a href="/admin" class="back-link-btn">回到後台</a>
+        <a href="/stats" class="back-link-btn">查看統計</a>
+      </div>
     </div>
 
     <div class="edit-grid">
       <section class="edit-card">
         <div class="card-title">聲部名單 section_members</div>
         <div class="card-desc">
-          格式：姓名,聲部<br>
-          例：王小明,吹管
+          每列代表一位成員。姓名需與訂單查詢頁輸入的姓名一致。<br />
+          聲部建議使用：吹管、彈撥、拉弦、低音、打擊、特殊來源。
         </div>
-        <textarea id="section-members-text"></textarea>
+
+        <div class="table-scroll">
+          <table class="edit-table" id="section-table">
+            <thead>
+              <tr>
+                <th>姓名</th>
+                <th>聲部</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
         <div class="action-row">
-          <button onclick="saveSectionMembers()">儲存聲部名單</button>
-          <button class="secondary" onclick="loadEditData()">重新載入</button>
+          <button class="secondary-btn" type="button" onclick="addSectionRow()">新增一列</button>
+          <button class="primary-btn" type="button" onclick="saveSectionMembers()">儲存聲部名單</button>
+          <button class="secondary-btn" type="button" onclick="loadEditData()">重新載入</button>
         </div>
+
+        <div id="section-status" class="status-text"></div>
       </section>
 
       <section class="edit-card">
         <div class="card-title">統計設定 stats_config</div>
         <div class="card-desc">
-          格式：類型,名稱,條件<br>
-          例：target,目標推票數,300<br>
-          例：reward,500元區戰神,500:32
+          target 用來設定總目標；reward 用來設定獎勵規則。<br />
+          條件格式例：TOTAL:30、500:32、500:10,300:5。
         </div>
-        <textarea id="stats-config-text"></textarea>
+
+        <div class="table-scroll">
+          <table class="edit-table" id="stats-table">
+            <thead>
+              <tr>
+                <th>類型</th>
+                <th>名稱</th>
+                <th>條件</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
         <div class="action-row">
-          <button onclick="saveStatsConfig()">儲存統計設定</button>
-          <button class="secondary" onclick="loadEditData()">重新載入</button>
+          <button class="secondary-btn" type="button" onclick="addStatsRow()">新增一列</button>
+          <button class="primary-btn" type="button" onclick="saveStatsConfig()">儲存統計設定</button>
+          <button class="secondary-btn" type="button" onclick="loadEditData()">重新載入</button>
         </div>
+
+        <div id="stats-status" class="status-text"></div>
       </section>
     </div>
   </div>
 
   <script>
+    function escapeHtml(text) {
+      return String(text ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setStatus(id, message, type = "") {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      el.textContent = message || "";
+      el.className = `status-text ${type}`;
+    }
+
     async function fetchJson(url, options = {}) {
       const res = await fetch(url, options);
       const raw = await res.text();
@@ -193,8 +324,8 @@
       try {
         data = JSON.parse(raw);
       } catch {
-        alert(`API 回傳不是 JSON：${res.status}`);
         console.log(raw);
+        alert(`API 回傳不是 JSON：${res.status}`);
         throw new Error("Non JSON response");
       }
 
@@ -206,34 +337,158 @@
       return data;
     }
 
+    function sectionRowHtml(row = {}) {
+      return `
+        <tr>
+          <td>
+            <input class="cell-input section-name" type="text" value="${escapeHtml(row.name || "")}" placeholder="姓名" />
+          </td>
+          <td>
+            <input class="cell-input section-value" type="text" value="${escapeHtml(row.section || "")}" placeholder="聲部" />
+          </td>
+          <td style="text-align:center;">
+            <button class="delete-row-btn" type="button" onclick="this.closest('tr').remove()">刪除</button>
+          </td>
+        </tr>
+      `;
+    }
+
+    function statsRowHtml(row = {}) {
+      return `
+        <tr>
+          <td>
+            <input class="cell-input stats-type" type="text" value="${escapeHtml(row.type || "")}" placeholder="target / reward" />
+          </td>
+          <td>
+            <input class="cell-input stats-name" type="text" value="${escapeHtml(row.name || "")}" placeholder="名稱" />
+          </td>
+          <td>
+            <input class="cell-input stats-condition" type="text" value="${escapeHtml(row.condition || "")}" placeholder="TOTAL:30 或 500:32" />
+          </td>
+          <td style="text-align:center;">
+            <button class="delete-row-btn" type="button" onclick="this.closest('tr').remove()">刪除</button>
+          </td>
+        </tr>
+      `;
+    }
+
+    function renderSectionMembers(rows) {
+      const tbody = document.querySelector("#section-table tbody");
+      tbody.innerHTML = "";
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        tbody.innerHTML = sectionRowHtml();
+        return;
+      }
+
+      tbody.innerHTML = rows.map(row => sectionRowHtml(row)).join("");
+    }
+
+    function renderStatsConfig(rows) {
+      const tbody = document.querySelector("#stats-table tbody");
+      tbody.innerHTML = "";
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        tbody.innerHTML = statsRowHtml({ type: "target", name: "目標推票數", condition: "" });
+        return;
+      }
+
+      tbody.innerHTML = rows.map(row => statsRowHtml(row)).join("");
+    }
+
+    function addSectionRow() {
+      const tbody = document.querySelector("#section-table tbody");
+      tbody.insertAdjacentHTML("beforeend", sectionRowHtml());
+    }
+
+    function addStatsRow() {
+      const tbody = document.querySelector("#stats-table tbody");
+      tbody.insertAdjacentHTML("beforeend", statsRowHtml({ type: "reward" }));
+    }
+
     async function loadEditData() {
-      const data = await fetchJson("/api/edit/config");
-      document.getElementById("section-members-text").value = data.section_members || "";
-      document.getElementById("stats-config-text").value = data.stats_config || "";
+      setStatus("section-status", "載入中...");
+      setStatus("stats-status", "載入中...");
+
+      try {
+        const data = await fetchJson("/api/edit/config");
+
+        renderSectionMembers(data.section_members || []);
+        renderStatsConfig(data.stats_config || []);
+
+        setStatus("section-status", "已載入最新聲部名單", "success");
+        setStatus("stats-status", "已載入最新統計設定", "success");
+      } catch (error) {
+        setStatus("section-status", "載入失敗", "error");
+        setStatus("stats-status", "載入失敗", "error");
+      }
+    }
+
+    function collectSectionMembers() {
+      const rows = [];
+
+      document.querySelectorAll("#section-table tbody tr").forEach(tr => {
+        const name = tr.querySelector(".section-name")?.value.trim() || "";
+        const section = tr.querySelector(".section-value")?.value.trim() || "";
+
+        if (!name && !section) return;
+
+        rows.push({ name, section });
+      });
+
+      return rows;
+    }
+
+    function collectStatsConfig() {
+      const rows = [];
+
+      document.querySelectorAll("#stats-table tbody tr").forEach(tr => {
+        const type = tr.querySelector(".stats-type")?.value.trim() || "";
+        const name = tr.querySelector(".stats-name")?.value.trim() || "";
+        const condition = tr.querySelector(".stats-condition")?.value.trim() || "";
+
+        if (!type && !name && !condition) return;
+
+        rows.push({ type, name, condition });
+      });
+
+      return rows;
     }
 
     async function saveSectionMembers() {
-      const text = document.getElementById("section-members-text").value;
+      const rows = collectSectionMembers();
 
-      await fetchJson("/api/edit/section-members", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-      });
+      setStatus("section-status", "儲存中...");
 
-      alert("聲部名單已儲存");
+      try {
+        await fetchJson("/api/edit/section-members", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rows })
+        });
+
+        setStatus("section-status", "聲部名單已儲存", "success");
+      } catch (error) {
+        setStatus("section-status", "儲存失敗", "error");
+      }
     }
 
     async function saveStatsConfig() {
-      const text = document.getElementById("stats-config-text").value;
+      const rows = collectStatsConfig();
 
-      await fetchJson("/api/edit/stats-config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-      });
+      setStatus("stats-status", "儲存中...");
 
-      alert("統計設定已儲存");
+      try {
+        await fetchJson("/api/edit/stats-config", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rows })
+        });
+
+        setStatus("stats-status", "統計設定已儲存", "success");
+      } catch (error) {
+        setStatus("stats-status", "儲存失敗", "error");
+      }
     }
 
     loadEditData();
