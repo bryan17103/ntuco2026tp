@@ -22,8 +22,10 @@ from lib.sheet_repo import (
     build_stats_summary,
     get_all_records,
     normalize_text,
-    worksheet_to_csv_text,
-    replace_worksheet_from_csv_text,
+    get_section_members_rows,
+    get_stats_config_rows,
+    save_section_members_rows,
+    save_stats_config_rows,
 )
 
 app = Flask(__name__)
