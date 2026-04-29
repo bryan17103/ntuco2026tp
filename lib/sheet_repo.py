@@ -33,7 +33,7 @@ def get_google_credentials():
 
 SERVICE_ACCOUNT_FILE = "credentials/google-service-account.json"
 SPREADSHEET_ID = "1jtPGTV1dCT6QhI9gehKrMu_YwSvNaCrSViKU9S9Rxp8"
-WORKSHEET_NAME = "Wholerecord"
+WORKSHEET_NAME = "2026Summer_Taipei"
 
 HEADERS = [
     "訂單日期與時間",  # A
