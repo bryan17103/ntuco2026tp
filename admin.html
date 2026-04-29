@@ -297,6 +297,7 @@
                         <tr>
                             <th>訂單日期與時間</th>
                             <th>訂單ID</th>
+                            <th>姓名</th>
                             <th>排數</th>
                             <th>座位</th>
                             <th>票價</th>
@@ -309,7 +310,7 @@
                     </thead>
                     <tbody id="admin-orders-tbody">
                         <tr>
-                            <td colspan="10" class="empty-state">請先輸入姓名或訂單ID查詢</td>
+                            <td colspan="11" class="empty-state">請先輸入姓名或訂單ID查詢</td>
                         </tr>
                     </tbody>
                 </table>
@@ -320,6 +321,24 @@
     <script>
         let authed = false;
 
+        function showUnauthorized() {
+            document.body.innerHTML = `
+                <div style="
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: Arial, 'Noto Sans TC', sans-serif;
+                    background: linear-gradient(135deg, #0f3b3a, #4b1f11);
+                    color: white;
+                    font-size: 28px;
+                    font-weight: 800;
+                ">
+                    你不是票務 :(
+                </div>
+            `;
+        }
+
         async function requirePassword() {
             if (sessionStorage.getItem("admin_ok") === "1") {
                 authed = true;
@@ -327,7 +346,10 @@
             }
         
             const input = prompt("請輸入密碼");
-            if (!input) return false;
+            if (!input) {
+                showUnauthorized();
+                return false;
+            }
         
             const res = await fetch("/api/admin/login", {
                 method: "POST",
@@ -347,23 +369,8 @@
                 return false;
             }
         
-            alert(data.message || "你不是票務 :(");
-        
-            document.body.innerHTML = `
-                <div style="
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-family: Arial, 'Noto Sans TC', sans-serif;
-                    background: linear-gradient(135deg, #0f3b3a, #4b1f11);
-                    color: white;
-                    font-size: 28px;
-                    font-weight: 800;
-                ">
-                    你不是票務 :(
-                </div>
-            `;
+            alert(data.message || "密碼錯誤");
+            showUnauthorized();
             return false;
         }
 
@@ -416,7 +423,7 @@
             if (!orders.length) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="empty-state">查無資料</td>
+                        <td colspan="11" class="empty-state">查無資料</td>
                     </tr>
                 `;
                 return;
@@ -426,6 +433,7 @@
                 <tr>
                     <td class="info-text">${escapeHtml(order.datetime)}</td>
                     <td class="info-text">${escapeHtml(order.order_id)}</td>
+                    <td class="info-text">${escapeHtml(order.name)}</td>
                     <td class="info-text">${escapeHtml(order.floor)}${escapeHtml(order.row_label)}排</td>
                     <td class="info-text seats-cell">${order.seats.map(seat => `${seat}號`).join("、")}</td>
                     <td class="info-text">$${order.price}</td>
