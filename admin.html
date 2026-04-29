@@ -146,7 +146,7 @@
         .admin-table td:nth-child(2) { width: 130px; }
 
         .admin-table th:nth-child(3),
-        .admin-table td:nth-child(3) { width: 130px; }
+        .admin-table td:nth-child(3) { width: 110px; }
 
         .admin-table th:nth-child(4),
         .admin-table td:nth-child(4) { width: 110px; }
@@ -444,7 +444,7 @@
                     <td class="info-text">${escapeHtml(order.order_id)}</td>
                     <td class="info-text">${escapeHtml(order.name)}</td>
                     <td class="info-text">${escapeHtml(order.floor)}${escapeHtml(order.row_label)}排</td>
-                    <td class="info-text seats-cell">${order.seats.map(seat => `${seat}號`).join("、")}</td>
+                    <td class="info-text seats-cell">${order.seats.map(seat => `${seat}`).join("、")}</td>
                     <td class="info-text">$${order.price}</td>
                     <td>
                         <input
