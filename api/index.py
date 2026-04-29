@@ -2,7 +2,8 @@ import os
 import time
 from threading import Lock
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session
+from functools import wraps
 
 from lib.seat_parser import parse_seat_map
 from lib.sheet_repo import (
@@ -24,6 +25,7 @@ from lib.sheet_repo import (
 
 app = Flask(__name__)
 
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 SEAT_FILE = os.path.join(PROJECT_ROOT, "data", "seat_map.xlsx")
 
@@ -212,8 +214,27 @@ def api_update_order_pickup(order_id):
 
     return jsonify({"success": True, "message": "取票狀態已更新"})
 
+@app.route("/api/admin/login", methods=["POST"])
+def api_admin_login():
+    data = request.get_json(silent=True) or {}
+    password = str(data.get("password", ""))
+
+    if password == os.environ.get("ADMIN_PASSWORD"):
+        session["admin_ok"] = True
+        return jsonify({"success": True})
+
+    return jsonify({"success": False, "message": "你不是票務！"}), 401
+
+def require_admin(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not session.get("admin_ok"):
+            return jsonify({"success": False, "message": "你不是票務！"}), 401
+        return fn(*args, **kwargs)
+    return wrapper
 
 @app.route("/api/admin/orders", methods=["GET"])
+@require_admin
 def api_admin_orders():
     keyword = request.args.get("keyword", "").strip()
 
@@ -231,6 +252,7 @@ def api_admin_orders():
 
 
 @app.route("/api/admin/orders/<order_id>/lock", methods=["PATCH"])
+@require_admin
 def api_admin_lock(order_id):
     ok, message = admin_toggle_lock_status(order_id)
     if not ok:
@@ -239,6 +261,7 @@ def api_admin_lock(order_id):
 
 
 @app.route("/api/admin/orders/<order_id>/payment", methods=["PATCH"])
+@require_admin
 def api_admin_payment(order_id):
     ok, message = admin_toggle_payment_status(order_id)
     if not ok:
@@ -247,6 +270,7 @@ def api_admin_payment(order_id):
 
 
 @app.route("/api/admin/orders/<order_id>/pickup/advance", methods=["PATCH"])
+@require_admin
 def api_admin_pickup_advance(order_id):
     ok, message = admin_advance_pickup_status(order_id)
     if not ok:
@@ -255,6 +279,7 @@ def api_admin_pickup_advance(order_id):
 
 
 @app.route("/api/admin/orders/<order_id>", methods=["DELETE"])
+@require_admin
 def api_admin_delete(order_id):
     ok, message = admin_delete_order(order_id)
     if not ok:
@@ -268,3 +293,5 @@ def api_stats():
         "success": True,
         "data": build_stats_summary()
     })
+
+
