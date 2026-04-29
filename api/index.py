@@ -238,16 +238,14 @@ def require_admin(fn):
 def api_admin_orders():
     keyword = request.args.get("keyword", "").strip()
 
-    if not keyword:
-        return jsonify({
-            "success": False,
-            "message": "請輸入姓名或訂單ID",
-            "orders": []
-        }), 400
+    if keyword:
+        orders = admin_search_orders(keyword)
+    else:
+        orders = admin_search_orders("")  # 空字串代表全部訂單
 
     return jsonify({
         "success": True,
-        "orders": admin_search_orders(keyword)
+        "orders": orders
     })
 
 
