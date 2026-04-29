@@ -167,10 +167,7 @@
         .admin-table td:nth-child(9) { width: 150px; text-align: center; }
 
         .admin-table th:nth-child(10),
-        .admin-table td:nth-child(10) { width: 150px; text-align: center; }
-
-        .admin-table th:nth-child(11),
-        .admin-table td:nth-child(11) { width: 170px; text-align: center; }
+        .admin-table td:nth-child(10) { width: 170px; text-align: center; }
 
         .info-text {
             color: #276fb7;
@@ -309,14 +306,13 @@
                             <th>票價</th>
                             <th>備註</th>
                             <th>鎖定狀態</th>
-                            <th>刪除</th>
                             <th>付款狀態</th>
                             <th>取票狀態</th>
                         </tr>
                     </thead>
                     <tbody id="admin-orders-tbody">
                         <tr>
-                            <td colspan="11" class="empty-state">請先輸入姓名或訂單ID查詢</td>
+                            <td colspan="10" class="empty-state">請先輸入姓名或訂單ID查詢</td>
                         </tr>
                     </tbody>
                 </table>
@@ -405,13 +401,6 @@
             return `<button class="pill-btn cyan" type="button" onclick="toggleLock('${escapeHtml(order.order_id)}')">開放刪除</button>`;
         }
 
-        function deleteButtonHtml(order) {
-            if (order.order_status === "locked") {
-                return `<button class="pill-btn gray" type="button" disabled>已鎖定，無法刪除</button>`;
-            }
-            return `<button class="pill-btn red-outline" type="button" onclick="deleteOrder('${escapeHtml(order.order_id)}')">刪除</button>`;
-        }
-
         function paymentButtonHtml(order) {
             if (order.payment_done) {
                 return `<button class="pill-btn green" type="button" onclick="togglePayment('${escapeHtml(order.order_id)}')">已付款</button>`;
@@ -442,7 +431,7 @@
             if (!orders.length) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="11" class="empty-state">查無資料</td>
+                        <td colspan="10" class="empty-state">查無資料</td>
                     </tr>
                 `;
                 return;
@@ -466,7 +455,6 @@
                         />
                     </td>
                     <td><div class="cell-center">${lockButtonHtml(order)}</div></td>
-                    <td><div class="cell-center">${deleteButtonHtml(order)}</div></td>
                     <td><div class="cell-center">${paymentButtonHtml(order)}</div></td>
                     <td><div class="cell-center">${pickupButtonHtml(order)}</div></td>
                 </tr>
