@@ -323,7 +323,7 @@
 
     <script>
         let authed = false;
-
+        
         function showUnauthorized() {
             document.body.innerHTML = `
                 <div style="
@@ -341,7 +341,7 @@
                 </div>
             `;
         }
-
+        
         async function requirePassword() {
             if (sessionStorage.getItem("admin_ok") === "1") {
                 authed = true;
@@ -359,20 +359,27 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ password: input })
             });
-            
+        
             const raw = await res.text();
             console.log("login status:", res.status);
             console.log("login raw:", raw);
-            
+        
             let data;
             try {
                 data = JSON.parse(raw);
             } catch {
                 alert(`登入 API 回傳不是 JSON：${res.status}`);
+                showUnauthorized();
                 return false;
             }
         
-            alert(data.message || "密碼錯誤");
+            if (res.ok && data.success) {
+                sessionStorage.setItem("admin_ok", "1");
+                authed = true;
+                return true;
+            }
+        
+            alert(data.message || "你不是票務 :(");
             showUnauthorized();
             return false;
         }
