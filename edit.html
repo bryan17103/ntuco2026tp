@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>修改資料</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Noto Sans TC", sans-serif;
+      background: linear-gradient(135deg, #0f3b3a, #4b1f11);
+      min-height: 100vh;
+      padding: 12px;
+    }
+
+    .edit-shell {
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 28px;
+      padding: 24px;
+      min-height: calc(100vh - 24px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+
+    .edit-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 900;
+      color: #222;
+    }
+
+    .hint {
+      margin: 8px 0 0;
+      color: #777;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .back-link-btn {
+      height: 44px;
+      padding: 0 20px;
+      border-radius: 16px;
+      border: 2px solid #ddd;
+      background: #fff;
+      color: #444;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .edit-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .edit-card {
+      background: #fff;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 24px;
+      padding: 18px;
+    }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      color: #222;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: #777;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 520px;
+      resize: vertical;
+      border: 2px solid #ddd;
+      border-radius: 16px;
+      padding: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: #f26c41;
+      box-shadow: 0 0 0 4px rgba(242, 108, 65, 0.12);
+    }
+
+    .action-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      height: 44px;
+      padding: 0 20px;
+      border: none;
+      border-radius: 14px;
+      background: #f26c41;
+      color: white;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #eee;
+      color: #444;
+    }
+
+    @media (max-width: 900px) {
+      .edit-grid {
+        grid-template-columns: 1fr;
+      }
+
+      textarea {
+        min-height: 360px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="edit-shell">
+    <div class="edit-topbar">
+      <div>
+        <h1>修改資料</h1>
+        <p class="hint">
+          這裡會直接修改 Google Sheet 的 section_members 與 stats_config 分頁。<br>
+          修改後統計頁會直接讀取最新資料。
+        </p>
+      </div>
+      <a href="/admin" class="back-link-btn">回到後台</a>
+    </div>
+
+    <div class="edit-grid">
+      <section class="edit-card">
+        <div class="card-title">聲部名單 section_members</div>
+        <div class="card-desc">
+          格式：姓名,聲部<br>
+          例：王小明,吹管
+        </div>
+        <textarea id="section-members-text"></textarea>
+        <div class="action-row">
+          <button onclick="saveSectionMembers()">儲存聲部名單</button>
+          <button class="secondary" onclick="loadEditData()">重新載入</button>
+        </div>
+      </section>
+
+      <section class="edit-card">
+        <div class="card-title">統計設定 stats_config</div>
+        <div class="card-desc">
+          格式：類型,名稱,條件<br>
+          例：target,目標推票數,300<br>
+          例：reward,500元區戰神,500:32
+        </div>
+        <textarea id="stats-config-text"></textarea>
+        <div class="action-row">
+          <button onclick="saveStatsConfig()">儲存統計設定</button>
+          <button class="secondary" onclick="loadEditData()">重新載入</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    async function fetchJson(url, options = {}) {
+      const res = await fetch(url, options);
+      const raw = await res.text();
+
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        alert(`API 回傳不是 JSON：${res.status}`);
+        console.log(raw);
+        throw new Error("Non JSON response");
+      }
+
+      if (!res.ok || !data.success) {
+        alert(data.message || `操作失敗：${res.status}`);
+        throw new Error(data.message || "API failed");
+      }
+
+      return data;
+    }
+
+    async function loadEditData() {
+      const data = await fetchJson("/api/edit/config");
+      document.getElementById("section-members-text").value = data.section_members || "";
+      document.getElementById("stats-config-text").value = data.stats_config || "";
+    }
+
+    async function saveSectionMembers() {
+      const text = document.getElementById("section-members-text").value;
+
+      await fetchJson("/api/edit/section-members", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      alert("聲部名單已儲存");
+    }
+
+    async function saveStatsConfig() {
+      const text = document.getElementById("stats-config-text").value;
+
+      await fetchJson("/api/edit/stats-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      alert("統計設定已儲存");
+    }
+
+    loadEditData();
+  </script>
+</body>
+</html>
