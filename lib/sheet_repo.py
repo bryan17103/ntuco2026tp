@@ -21,9 +21,6 @@ from collections import defaultdict
 from collections import defaultdict
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-SECTION_MEMBER_FILE = os.path.join(PROJECT_ROOT, "data", "section_members.txt")
-STATS_CONFIG_FILE = os.path.join(PROJECT_ROOT, "data", "stats_config.txt")
-
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -36,7 +33,7 @@ def get_google_credentials():
 
 SERVICE_ACCOUNT_FILE = "credentials/google-service-account.json"
 SPREADSHEET_ID = "1jtPGTV1dCT6QhI9gehKrMu_YwSvNaCrSViKU9S9Rxp8"
-WORKSHEET_NAME = "2026Summer_Taipei"
+WORKSHEET_NAME = "Wholerecord"
 
 HEADERS = [
     "訂單日期與時間",  # A
@@ -74,7 +71,12 @@ def get_worksheet():
     _ws_cache = spreadsheet.worksheet(WORKSHEET_NAME)
     return _ws_cache
 
-
+def get_config_worksheet(name: str):
+    creds = get_google_credentials()
+    client = gspread.authorize(creds)
+    spreadsheet = client.open_by_key(SPREADSHEET_ID)
+    return spreadsheet.worksheet(name)
+    
 def clear_caches():
     global _sold_cache, _sold_cache_time
     _sold_cache = None
@@ -583,24 +585,17 @@ def load_section_members():
     member_to_section = {}
 
     try:
-        with open(SECTION_MEMBER_FILE, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-    except FileNotFoundError:
+        ws = get_config_worksheet("section_members")
+        rows = ws.get_all_records()
+    except Exception:
         return member_to_section
 
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith("姓名,"):
-            continue
+    for row in rows:
+        name = normalize_text(row.get("姓名"))
+        section = normalize_text(row.get("聲部"))
 
-        parts = [x.strip() for x in line.split(",")]
-        if len(parts) != 2:
-            continue
-
-        name, section = parts
-        member_to_section[name] = section
+        if name and section:
+            member_to_section[name] = section
 
     return member_to_section
 
@@ -771,45 +766,43 @@ def load_stats_config():
     }
 
     try:
-        with open(STATS_CONFIG_FILE, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-    except FileNotFoundError:
+        ws = get_config_worksheet("stats_config")
+        rows = ws.get_all_records()
+    except Exception:
         return config
 
-    for raw_line in lines:
-        line = raw_line.strip()
+    for row in rows:
+        row_type = normalize_text(row.get("類型")).lower()
+        name = normalize_text(row.get("名稱"))
+        condition_text = normalize_text(row.get("條件"))
 
-        if not line or line.startswith("#"):
-            continue
-
-        if line.startswith("目標推票數="):
+        if row_type == "target":
             try:
-                config["target_tickets"] = int(line.split("=", 1)[1].strip())
+                config["target_tickets"] = int(condition_text)
             except Exception:
                 config["target_tickets"] = 0
             continue
 
-        if "|" not in line:
-            continue
+        if row_type == "reward":
+            conditions = {}
 
-        reward_name, condition_text = [x.strip() for x in line.split("|", 1)]
+            for item in condition_text.split(","):
+                item = item.strip()
+                if not item or ":" not in item:
+                    continue
 
-        conditions = {}
-        for item in condition_text.split(","):
-            item = item.strip()
-            if not item or ":" not in item:
-                continue
+                key, value = [x.strip() for x in item.split(":", 1)]
 
-            key, value = [x.strip() for x in item.split(":", 1)]
-            try:
-                conditions[key.upper()] = int(value)
-            except Exception:
-                continue
+                try:
+                    conditions[key.upper()] = int(value)
+                except Exception:
+                    continue
 
-        config["rewards"].append({
-            "reward": reward_name,
-            "conditions": conditions
-        })
+            if name and conditions:
+                config["rewards"].append({
+                    "reward": name,
+                    "conditions": conditions
+                })
 
     return config
 
