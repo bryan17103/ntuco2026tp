@@ -530,8 +530,12 @@
         });
     
         window.onload = async () => {
-            await requirePassword();
+            const ok = await requirePassword();
+            if (ok) {
+                searchAdminOrders();
+            }
         };
+        
     </script>
     
 </body>
