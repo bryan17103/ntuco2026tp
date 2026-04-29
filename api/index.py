@@ -22,6 +22,8 @@ from lib.sheet_repo import (
     build_stats_summary,
     get_all_records,
     normalize_text,
+    worksheet_to_csv_text,
+    replace_worksheet_from_csv_text,
 )
 
 app = Flask(__name__)
@@ -310,6 +312,74 @@ def api_admin_delete(order_id):
         return jsonify({"success": False, "message": message}), 403
     return jsonify({"success": True, "message": message})
 
+@app.route("/api/edit/config", methods=["GET"])
+@require_admin
+def api_edit_get_config():
+    try:
+        section_members = worksheet_to_csv_text("section_members")
+        stats_config = worksheet_to_csv_text("stats_config")
+
+        return jsonify({
+            "success": True,
+            "section_members": section_members,
+            "stats_config": stats_config
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+
+@app.route("/api/edit/section-members", methods=["PUT"])
+@require_admin
+def api_edit_section_members():
+    try:
+        data = request.get_json(silent=True) or {}
+        text = str(data.get("text", ""))
+
+        replace_worksheet_from_csv_text(
+            "section_members",
+            ["姓名", "聲部"],
+            text
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "聲部名單已更新"
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+
+@app.route("/api/edit/stats-config", methods=["PUT"])
+@require_admin
+def api_edit_stats_config():
+    try:
+        data = request.get_json(silent=True) or {}
+        text = str(data.get("text", ""))
+
+        replace_worksheet_from_csv_text(
+            "stats_config",
+            ["類型", "名稱", "條件"],
+            text
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "統計設定已更新"
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
 
 @app.route("/api/stats", methods=["GET"])
 def api_stats():
