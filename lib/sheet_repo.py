@@ -816,3 +816,36 @@ def format_reward_conditions(conditions: dict) -> str:
             parts.append(f"{key}元區 × {value}")
 
     return " + ".join(parts)
+
+def worksheet_to_csv_text(sheet_name: str) -> str:
+    ws = get_config_worksheet(sheet_name)
+    values = ws.get_all_values()
+
+    lines = []
+    for row in values[1:]:  # 跳過標題列
+        if not any(normalize_text(cell) for cell in row):
+            continue
+        lines.append(",".join(normalize_text(cell) for cell in row))
+
+    return "\n".join(lines)
+
+
+def replace_worksheet_from_csv_text(sheet_name: str, headers: List[str], text: str) -> None:
+    ws = get_config_worksheet(sheet_name)
+
+    rows = [headers]
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        parts = [x.strip() for x in line.split(",")]
+
+        while len(parts) < len(headers):
+            parts.append("")
+
+        rows.append(parts[:len(headers)])
+
+    ws.clear()
+    ws.update("A1", rows)
