@@ -364,9 +364,6 @@ def update_order_pickup_status(order_id: str, pickup_open: bool = None, picked_u
     return updated_any
 
 def admin_search_orders(keyword: str) -> List[dict]:
-    target = normalize_text(keyword)
-    if not target:
-        return []
 
     rows = get_all_records()
     grouped = {}
@@ -379,7 +376,7 @@ def admin_search_orders(keyword: str) -> List[dict]:
         row_name = normalize_text(row.get("名字"))
         order_id = normalize_text(row.get("訂單ID"))
 
-        if target not in row_name and target not in order_id:
+        if target and target not in row_name and target not in order_id:
             continue
 
         dt = normalize_text(row.get("訂單日期與時間"))
