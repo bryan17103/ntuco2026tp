@@ -446,24 +446,24 @@
 
         async function searchAdminOrders() {
             if (!authed) return;
+        
             const input = document.getElementById("admin-keyword-input");
             const keyword = input.value.trim();
-
-            if (!keyword) {
-                alert("請輸入姓名或訂單ID");
-                return;
-            }
-
+        
             currentKeyword = keyword;
-
-            const res = await fetch(`/api/admin/orders?keyword=${encodeURIComponent(keyword)}`);
+        
+            const url = keyword
+                ? `/api/admin/orders?keyword=${encodeURIComponent(keyword)}`
+                : `/api/admin/orders`;
+        
+            const res = await fetch(url);
             const data = await res.json();
-
+        
             if (!res.ok || !data.success) {
                 alert(data.message || "查詢失敗");
                 return;
             }
-
+        
             renderAdminOrders(data.orders || []);
         }
 
