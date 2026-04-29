@@ -410,10 +410,16 @@
             if (order.picked_up) {
                 return `<button class="pill-btn blue" type="button" onclick="advancePickup('${escapeHtml(order.order_id)}')">已取</button>`;
             }
+        
             if (order.pickup_open) {
                 return `<button class="pill-btn green" type="button" onclick="advancePickup('${escapeHtml(order.order_id)}')">已開放</button>`;
             }
-            return `<button class="pill-btn gray" type="button" onclick="advancePickup('${escapeHtml(order.order_id)}')">未開放</button>`;
+        
+            if (order.ticket_adjusted) {
+                return `<button class="pill-btn cyan" type="button" onclick="advancePickup('${escapeHtml(order.order_id)}')">已調票</button>`;
+            }
+        
+            return `<button class="pill-btn gray" type="button" onclick="toggleTicketAdjusted('${escapeHtml(order.order_id)}')">未開放</button>`;
         }
 
         function renderAdminOrders(orders) {
@@ -513,6 +519,23 @@
                 alert(data.message || "更新失敗");
                 return;
             }
+            searchAdminOrders();
+        }
+
+        async function toggleTicketAdjusted(orderId) {
+            if (!authed) return;
+        
+            const res = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/ticket-adjusted`, {
+                method: "PATCH"
+            });
+        
+            const data = await res.json();
+        
+            if (!res.ok || !data.success) {
+                alert(data.message || "更新失敗");
+                return;
+            }
+        
             searchAdminOrders();
         }
 
