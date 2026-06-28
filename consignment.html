@@ -46,8 +46,12 @@
                 查詢寄票資料
             </button>
 
+            <a class="consignment-mode-tab consignment-front-link" href="https://ntucotixcheck.vercel.app/">
+                🎫 前往聽眾取票查詢網站
+            </a>
+
             <a class="consignment-mode-tab consignment-front-link" href="/consignment-front">
-                前往前台專用
+                🔧 前台專用
             </a>
         </div>
 
@@ -1226,6 +1230,11 @@
             return card;
         }
 
+        function displayConsignmentIdForAudience(record) {
+            const raw = String(record.consignment_id || "").trim();
+            return raw.replace(/^(TP|KH)/i, "") || "-";
+        }
+
         async function copyConsignmentMessage(record) {
             const price = Number(record.price || 0);
             const amountText = price > 0
@@ -1233,14 +1242,15 @@
                 : "無需付款";
 
             const concertText = concertLabels[record.concert_code] || record.concert_code || "-";
-
             const message =
                 `您好！您的《嶋聲》取票資訊如下：\n\n` +
                 `場次：${concertText}\n` +
-                `取票編號：${record.consignment_id}\n` +
+                `取票編號：${displayConsignmentIdForAudience(record)}\n` +
                 `取票人姓名：${record.audience_name}\n` +
                 `應付金額：${amountText}\n\n` +
-                `演出當天請至前台報取票編號進行取票，謝謝！`;
+                `演出當天請至前台報取票編號進行取票，謝謝！\n\n` +
+                `您也可以到「團內購票取票查詢系統」自行查詢取票資訊：\n` +
+                `https://ntucotixcheck.vercel.app/`;
 
             try {
                 await navigator.clipboard.writeText(message);
