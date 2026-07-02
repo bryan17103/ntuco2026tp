@@ -237,7 +237,11 @@ def get_all_records(concert_code):
 
     ws = get_worksheet(concert_code)
 
-    rows = ws.get_all_records()
+    # 避免 Google Sheet 右側空白欄造成 duplicate header: ['']
+    raw_headers = ws.row_values(1)
+    expected_headers = [h.strip() for h in raw_headers if h and h.strip()]
+
+    rows = ws.get_all_records(expected_headers=expected_headers)
 
     _orders_cache[concert_code] = rows
     _orders_cache_time[concert_code] = now
