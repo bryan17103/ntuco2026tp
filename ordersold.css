@@ -1,7 +1,4 @@
-/* =========================================================
-   0. Theme Variables
-   主視覺更改時改這邊就好
-========================================================= */
+/* 主視覺更改時改這邊就好 */
 :root {
     --orders-main: #4f6f73; /* 主色：標題、重點文字、統計數字 */
     --orders-accent: #7f9f98; /* 強調色：按鈕、focus、互動元件 */
@@ -10,10 +7,6 @@
     --orders-bg-end: #8ea7a3; /* 背景漸層結束色（右下） */
     --orders-shell-bg: rgba(255,255,255,0.88); /* 主內容大框背景 */
 }
-
-/* =========================================================
-   0-1. Base Reset
-========================================================= */
 
 * {
     box-sizing: border-box;
@@ -35,9 +28,7 @@ body.orders-page {
         );
 }
 
-/* =========================================================
-   1. Layout Shell / Header
-========================================================= */
+/* Page Shell / Header */
 
 .orders-shell {
     position: relative;
@@ -148,9 +139,7 @@ body.orders-page {
     background: rgba(255,255,255,0.92);
 }
 
-/* =========================================================
-   2. Search
-========================================================= */
+/* Search */
 
 .orders-search-card {
     display: flex;
@@ -201,9 +190,7 @@ body.orders-page {
     background: var(--orders-accent-hover);
 }
 
-/* =========================================================
-   3. Mode Tabs
-========================================================= */
+/* Mode Tabs */
 
 .orders-mode-tabs {
     display: flex;
@@ -235,9 +222,7 @@ body.orders-page {
     color: white;
 }
 
-/* =========================================================
-   4. Summary Cards
-========================================================= */
+/* Summary Cards */
 
 .orders-summary-grid {
     display: grid;
@@ -407,9 +392,7 @@ body.orders-page {
     );
 }
 
-/* =========================================================
-   5. Points Card
-========================================================= */
+/* Points Card */
 
 .summary-card-points {
     min-width: 0;
@@ -464,9 +447,7 @@ body.orders-page {
     color: #777;
 }
 
-/* =========================================================
-   6. Seat Map Summary Card
-========================================================= */
+/* Seat Map Summary Card */
 
 .seat-map-card {
     border: 1px solid rgba(255,255,255,0.62);
@@ -543,9 +524,7 @@ body.orders-page {
         inset 0 1px 0 rgba(255,255,255,0.86);
 }
 
-/* =========================================================
-   7. Orders Table - Desktop
-========================================================= */
+/* Orders Table */
 
 .orders-table-card {
     border: 1.5px solid #e8e8e8;
@@ -676,9 +655,7 @@ table.orders-table {
     padding: 32px 20px;
 }
 
-/* =========================================================
-   8. Note / Row Actions
-========================================================= */
+/* Note / Row Actions */
 
 .note-wrap {
     display: flex;
@@ -801,9 +778,7 @@ table.orders-table {
     color: #356fcb;
 }
 
-/* =========================================================
-   9. Modal Base
-========================================================= */
+/* Modal Base */
 
 .modal-overlay {
     position: fixed;
@@ -879,9 +854,7 @@ table.orders-table {
     background: #e5e5e5;
 }
 
-/* =========================================================
-   10. Orders Help Modal
-========================================================= */
+/* Orders Help Modal */
 
 .orders-help-modal-card {
     width: min(720px, 92vw);
@@ -975,9 +948,7 @@ table.orders-table {
     font-weight: 900;
 }
 
-/* =========================================================
-   11. Stats Help Modal
-========================================================= */
+/* Stats Help Modal */
 
 .points-rule-list {
     display: grid;
@@ -995,9 +966,7 @@ table.orders-table {
     font-weight: 800;
 }
 
-/* =========================================================
-   12. Loading Overlay
-========================================================= */
+/* Loading Modal */
 
 .orders-loading-overlay {
     position: fixed;
@@ -1158,9 +1127,7 @@ table.orders-table {
     }
 }
 
-/* =========================================================
-   13. Purchased Seat Map Modal
-========================================================= */
+/* Purchased Seat Map Modal */
 
 .my-seat-map-modal-card {
     width: min(1120px, 96vw);
@@ -1388,9 +1355,7 @@ table.orders-table {
     border: 1.5px solid #fff;
 }
 
-/* =========================================================
-   14. Kaohsiung Seat Map Decorations
-========================================================= */
+/* Kaohsiung Seat Map Decorations */
 
 .my-map-stage {
     z-index: 1;
@@ -1480,9 +1445,7 @@ table.orders-table {
     justify-content: center;
 }
 
-/* =========================================================
-   15. Footer
-========================================================= */
+/* Footer */
 
 .page-footer {
     position: relative;
@@ -1501,9 +1464,7 @@ table.orders-table {
     color: rgba(55, 64, 61, 0.68);
 }
 
-/* =========================================================
-   16. Animations
-========================================================= */
+/* Animations */
 
 @keyframes modalPop {
     from {
@@ -1517,9 +1478,7 @@ table.orders-table {
     }
 }
 
-/* =========================================================
-   17. Responsive
-========================================================= */
+/* Responsive */
 
 @media (max-width: 1180px) {
     .orders-summary-grid {
@@ -1715,26 +1674,26 @@ table.orders-table {
 
     .note-wrap {
         display: flex;
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        align-items: center;
         gap: 8px;
-        width: 100%;
     }
 
     .note-input {
+        flex: 1;
         width: 100%;
         min-width: 0;
-        height: 48px;
+        height: 44px;
 
-        border-radius: 16px;
+        border-radius: 999px;
 
-        font-size: 15px;
+        font-size: 14px;
         padding: 0 16px;
     }
 
     .save-btn {
-        width: 100%;
-        min-width: 0;
+        width: auto;
+        min-width: 74px;
         height: 44px;
         padding: 0 16px;
 
@@ -1764,531 +1723,5 @@ table.orders-table {
 
     .cell-center {
         justify-content: stretch;
-    }
-}
-
-/* =========================================================
-   18. Mobile Fixes / Final Overrides
-   放在最後，專門修正手機版與小螢幕細節
-========================================================= */
-
-@media (max-width: 768px) {
-    body.orders-page {
-        padding: 8px;
-        min-height: 100dvh;
-    }
-
-    .orders-shell {
-        height: auto;
-        min-height: calc(100dvh - 16px - 38px);
-        overflow: visible;
-        border-radius: 22px;
-        padding: 20px 16px 18px;
-    }
-
-    .orders-hero {
-        gap: 14px;
-    }
-
-    .orders-title-wrap h1 {
-        font-size: 22px;
-        letter-spacing: 0.04em;
-        line-height: 1.45;
-    }
-
-    .orders-hero-subtitle,
-    .orders-note.main,
-    .orders-help-trigger {
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    .back-link-btn {
-        height: 42px;
-        border-radius: 999px;
-    }
-
-    .orders-search-card {
-        gap: 10px;
-        margin-bottom: 18px;
-    }
-
-    .orders-search-input,
-    .orders-search-btn {
-        height: 44px;
-        border-radius: 999px;
-    }
-
-    .orders-mode-tabs {
-        gap: 8px;
-        margin: -4px 0 18px;
-    }
-
-    .orders-mode-tab {
-        flex: 1;
-        min-width: 0;
-        height: 38px;
-        padding: 0 10px;
-        font-size: 13px;
-    }
-
-    .orders-summary-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-        margin-bottom: 16px;
-    }
-
-    .summary-card {
-        border-radius: 20px;
-        padding: 15px 16px 14px;
-    }
-
-    .summary-card-header {
-        gap: 12px;
-        margin-bottom: 12px;
-    }
-
-    .summary-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 12px;
-        font-size: 19px;
-    }
-
-    .summary-label,
-    .summary-card-points .summary-label.stats-help-trigger {
-        font-size: 18px;
-        letter-spacing: 0.03em;
-    }
-
-    .summary-metric-row,
-    .summary-points-row {
-        gap: 10px;
-        overflow-x: visible;
-    }
-
-    .summary-metric-label {
-        gap: 8px;
-        font-size: 14px;
-    }
-
-    .summary-metric-value,
-    #total-points {
-        font-size: 19px;
-    }
-
-    .summary-divider {
-        margin: 11px 0;
-    }
-
-    .ticket-price-inline {
-        font-size: 14px;
-        line-height: 1.7;
-    }
-
-    .ticket-price-inline strong {
-        font-size: 16px;
-    }
-
-    .seat-map-card-main {
-        margin-top: 6px;
-        padding-right: 42px;
-        font-size: 21px;
-    }
-
-    .seat-map-card-sub {
-        margin-top: 6px;
-        padding-right: 42px;
-        font-size: 13px;
-    }
-
-    .seat-map-arrow {
-        right: 16px;
-        bottom: 18px;
-        width: 34px;
-        height: 34px;
-        font-size: 28px;
-    }
-
-    table.orders-table {
-        min-width: 0;
-        table-layout: auto;
-    }
-
-    .orders-table-card {
-        margin-top: 4px;
-    }
-
-    .orders-table-scroll {
-        max-height: none;
-    }
-
-    .orders-table tbody tr {
-        border-radius: 20px;
-        padding: 15px;
-    }
-
-    .orders-table tbody tr.empty-row {
-        padding: 0;
-        border: 1.5px solid #e8e8e8;
-        background: #fff;
-        border-radius: 20px;
-    }
-
-    .orders-table tbody tr.empty-row td {
-        padding: 0;
-    }
-
-    .empty-state {
-        padding: 26px 16px;
-        font-size: 14px;
-        line-height: 1.7;
-    }
-
-    .orders-table td:nth-child(1),
-    .orders-table td:nth-child(2),
-    .orders-table td:nth-child(3),
-    .orders-table td:nth-child(4) {
-        flex-wrap: wrap;
-    }
-
-    .orders-table td:nth-child(3) {
-        word-break: break-word;
-    }
-
-    .note-wrap {
-        width: 100%;
-    }
-
-    .note-input {
-        min-width: 0;
-    }
-
-    .modal-overlay {
-        align-items: flex-end;
-        padding: 10px;
-    }
-
-    .modal-card {
-        width: 100%;
-        max-height: 88dvh;
-        overflow-y: auto;
-        border-radius: 24px;
-        padding: 24px 18px 20px;
-    }
-
-    .modal-card h2 {
-        padding-right: 36px;
-        font-size: 21px;
-        line-height: 1.35;
-    }
-
-    .modal-card p {
-        font-size: 14px;
-    }
-
-    .modal-close-btn {
-        top: 12px;
-        right: 12px;
-    }
-
-    .orders-help-modal-card {
-        width: 100%;
-        max-height: 88dvh;
-    }
-
-    .orders-help-title {
-        font-size: 22px;
-    }
-
-    .orders-help-content {
-        gap: 18px;
-    }
-
-    .orders-help-section h3 {
-        font-size: 17px;
-    }
-
-    .orders-help-section p {
-        font-size: 14px;
-        line-height: 1.75;
-    }
-
-    .stats-help-tabs {
-        gap: 8px;
-        margin: 16px 0 18px;
-    }
-
-    .stats-help-tab {
-        padding: 10px 8px;
-        font-size: 13px;
-    }
-
-    .discount-threshold-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-
-    .discount-th-item {
-        padding: 12px;
-        border-radius: 14px;
-    }
-
-    .discount-role {
-        font-size: 15px;
-    }
-
-    .discount-threshold {
-        font-size: 13px;
-    }
-
-    .my-seat-map-modal-card {
-        width: 100%;
-        height: 88dvh;
-        max-height: 88dvh;
-        padding: 22px 14px 14px;
-        border-radius: 24px 24px 0 0;
-    }
-
-    .my-seat-map-header {
-        gap: 10px;
-        padding-right: 36px;
-        margin-bottom: 12px;
-    }
-
-    .my-seat-map-header h2 {
-        font-size: 21px;
-    }
-
-    .my-seat-map-header p {
-        font-size: 13px;
-        line-height: 1.5;
-    }
-
-    .my-seat-legend {
-        justify-content: flex-start;
-        gap: 8px 10px;
-        font-size: 12px;
-        line-height: 1.4;
-    }
-
-    .my-seat-map-scroll {
-        padding: 8px;
-        border-radius: 16px;
-    }
-
-    .my-seat-map-viewport {
-        border-radius: 14px;
-    }
-
-    .my-seat-map {
-        gap: 5px;
-        padding: 8px 10px 20px;
-    }
-
-    .my-map-seat {
-        width: 20px;
-        height: 20px;
-        font-size: 8px;
-        line-height: 20px;
-    }
-
-    .my-map-stage {
-        font-size: 14px;
-        letter-spacing: 0.12em;
-        border-radius: 14px;
-    }
-
-    .my-seat-map .kh-floor-tag {
-        top: 6px;
-        left: 6px;
-        padding: 5px 9px;
-        font-size: 12px;
-    }
-
-    .page-footer {
-        height: 38px;
-        min-height: 38px;
-        font-family: Georgia, "Times New Roman", serif;
-        font-size: 11px;
-        letter-spacing: 0.1em;
-    }
-}
-
-@media (max-width: 520px) {
-    body.orders-page {
-        padding: 0;
-        background: var(--orders-shell-bg);
-    }
-
-    .orders-shell {
-        min-height: calc(100dvh - 38px);
-        border-radius: 0;
-        box-shadow: none;
-        padding: 20px 14px 16px;
-    }
-
-    .orders-title-wrap h1 {
-        font-size: 21px;
-    }
-
-    .orders-mode-tab {
-        font-size: 12px;
-    }
-
-    .summary-card {
-        padding: 14px;
-    }
-
-    .summary-card-header {
-        gap: 10px;
-    }
-
-    .summary-icon {
-        width: 34px;
-        height: 34px;
-        font-size: 18px;
-    }
-
-    .summary-label,
-    .summary-card-points .summary-label.stats-help-trigger {
-        font-size: 17px;
-    }
-
-    .summary-metric-label {
-        font-size: 13px;
-    }
-
-    .summary-metric-value,
-    #total-points {
-        font-size: 18px;
-    }
-
-    .note-wrap {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .save-btn {
-        width: 100%;
-    }
-
-    .modal-overlay {
-        padding: 0;
-    }
-
-    .modal-card {
-        max-height: 92dvh;
-        border-radius: 24px 24px 0 0;
-    }
-
-    .orders-loading-card {
-        min-width: 190px;
-        padding: 24px 26px;
-    }
-
-
-    .my-seat-map-modal-card {
-        width: 100vw;
-        height: 100dvh;
-        max-height: 100dvh;
-
-        border-radius: 0;
-        padding: 18px 14px;
-
-        display: flex;
-        flex-direction: column;
-    }
-
-    .my-seat-map-header {
-        flex-shrink: 0;
-        flex-direction: column;
-        gap: 10px;
-
-        padding-right: 38px;
-        margin-bottom: 12px;
-    }
-
-    .my-seat-map-header h2 {
-        font-size: 20px;
-    }
-
-    .my-seat-map-header p {
-        font-size: 13px;
-        line-height: 1.5;
-    }
-
-    .my-seat-legend {
-        justify-content: flex-start;
-        gap: 8px;
-
-        font-size: 12px;
-        line-height: 1.5;
-    }
-
-    .my-seat-map-scroll {
-        flex: 1;
-        min-height: 0;
-
-        overflow: auto;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
-
-        padding: 10px;
-        border-radius: 16px;
-    }
-
-    .my-seat-map-viewport {
-        width: 100%;
-        height: 100%;
-
-        overflow: auto;
-        -webkit-overflow-scrolling: touch;
-
-        cursor: default;
-        touch-action: pan-x pan-y;
-        overscroll-behavior: contain;
-    }
-
-    .my-seat-map-viewport.dragging {
-        cursor: default;
-    }
-
-    .my-seat-map {
-        width: max-content;
-        min-width: max-content;
-        min-height: max-content;
-
-        gap: 5px;
-        padding: 8px 10px 20px;
-
-        transform-origin: top left;
-    }
-
-    .my-map-seat {
-        width: 20px;
-        height: 20px;
-
-        font-size: 8px;
-        line-height: 20px;
-    }
-
-    .my-map-stage {
-        font-size: 14px;
-        letter-spacing: 0.12em;
-        border-radius: 14px;
-    }
-
-    .my-seat-map .kh-floor-tag {
-        top: 6px;
-        left: 6px;
-
-        padding: 5px 10px;
-
-        font-size: 12px;
-    }
-
-    .my-seat-map .kh-row-marker {
-        font-size: 9px;
     }
 }

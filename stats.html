@@ -372,16 +372,24 @@
             `).join("");
         }
 
-        function renderSections(sections) {
-            document.getElementById("section-grid").innerHTML = sections.map(section => `
+    function renderSections(sections) {
+        document.getElementById("section-grid").innerHTML = sections.map(section => {
+            const sortedMembers = [...(section.members || [])].sort((a, b) => {
+                const ticketDiff = Number(b.tickets || 0) - Number(a.tickets || 0);
+                if (ticketDiff !== 0) return ticketDiff;
+
+                return String(a.name || "").localeCompare(String(b.name || ""), "zh-Hant");
+            });
+
+            return `
                 <div class="section-block">
                     <div class="section-name-cell">${section.section}</div>
                     <div class="section-total-cell">${section.subtotal}</div>
-        
+
                     <div class="section-members-cell">
                         ${
-                            section.members.length
-                                ? section.members.map(m => `
+                            sortedMembers.length
+                                ? sortedMembers.map(m => `
                                     <span class="section-member-chip">
                                         <span class="section-member-name">${m.name}</span>
                                         <strong class="section-member-count">${m.tickets}</strong>
@@ -391,9 +399,10 @@
                         }
                     </div>
                 </div>
-            `).join("");
-        }
-
+            `;
+        }).join("");
+    }
+    
         function renderConditionChips(requirementText) {
             if (!requirementText) return `<span class="reward-empty">—</span>`;
 
