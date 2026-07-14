@@ -508,6 +508,35 @@ def get_manual_points(name: str, concert_code="tp") -> float:
 
     return float(info.get("manual_points", 0) or 0)
 
+def parse_manual_points_string(value) -> Tuple[int, float]:
+    """
+    將 "2 / 5" 或 "5" 的格式，解析為 (手動增加張數, 手動加分點數)
+    """
+    text = normalize_text(value)
+    if not text:
+        return 0, 0.0
+
+    if "/" in text:
+        parts = text.split("/")
+        try:
+            # 取得前半段：手動增加張數
+            manual_tickets = int(float(parts[0].strip()))
+        except Exception:
+            manual_tickets = 0
+        try:
+            # 取得後半段：手動增加積分
+            manual_points = float(parts[1].strip())
+        except Exception:
+            manual_points = 0.0
+        return manual_tickets, manual_points
+    else:
+        # 如果沒有斜線，代表只有手動加分，張數為 0
+        try:
+            manual_points = float(text)
+        except Exception:
+            manual_points = 0.0
+        return 0, manual_points
+    
 def calc_points_from_orders(orders) -> float:
     points = 0
 
@@ -878,25 +907,17 @@ def get_section_members_rows():
         name = normalize_text(row.get("姓名"))
         section = normalize_text(row.get("聲部"))
         identity_code = normalize_text(row.get("身份")) or "5"
+        manual_points_tp = normalize_text(row.get("手動加分_TP") or "0")
+        manual_points_kh = normalize_text(row.get("手動加分_KH") or "0")
 
-        try:
-            manual_points = float(row.get("手動加分_TP") or 0)
-        except Exception:
-            manual_points = 0
-
-        try:
-            manual_points_kh = float(row.get("手動加分_KH") or 0)
-        except Exception:
-            manual_points_kh = 0
-
-        if not name and not section and manual_points == 0 and manual_points_kh == 0 and not identity_code:
+        if not name and not section and not manual_points_tp and not manual_points_kh and not identity_code:
             continue
 
         result.append({
             "name": name,
             "section": section,
-            "manual_points": manual_points,
-            "manual_points_kh": manual_points_kh,
+            "manual_points": manual_points_tp,     # 這裡後台傳遞時保留原始字串（例如 "2 / 5"）
+            "manual_points_kh": manual_points_kh,  # 這裡也保留
             "identity_code": identity_code,
         })
 
@@ -918,31 +939,18 @@ def get_stats_config_rows():
 
 def save_section_members_rows(rows):
     ws = get_config_worksheet("section_members")
-
-    values = [[
-        "姓名",
-        "聲部",
-        "手動加分_TP",
-        "手動加分_KH",
-        "身份",
-    ]]
+    values = [["姓名", "聲部", "手動加分_TP", "手動加分_KH", "身份"]]
 
     for row in rows:
         name = normalize_name(row.get("name"))
         section = normalize_text(row.get("section"))
         identity_code = normalize_text(row.get("identity_code")) or "5"
+        
+        # 儲存時直接寫入原始字串（如 "2 / 5"），不轉成 float
+        manual_points_tp = normalize_text(row.get("manual_points") or "0")
+        manual_points_kh = normalize_text(row.get("manual_points_kh") or "0")
 
-        try:
-            manual_points_tp = float(row.get("manual_points") or 0)
-        except Exception:
-            manual_points_tp = 0
-
-        try:
-            manual_points_kh = float(row.get("manual_points_kh") or 0)
-        except Exception:
-            manual_points_kh = 0
-
-        if not name and not section and manual_points_tp == 0 and manual_points_kh == 0 and not identity_code:
+        if not name and not section and not manual_points_tp and not manual_points_kh and not identity_code:
             continue
 
         values.append([
@@ -955,7 +963,6 @@ def save_section_members_rows(rows):
 
     ws.batch_clear(["A:E"])
     ws.update("A1:E" + str(len(values)), values)
-
     clear_caches()
 
 def save_stats_config_rows(rows):
@@ -1006,17 +1013,18 @@ def load_section_members(concert_code="tp"):
         section = normalize_text(row.get("聲部"))
         identity_code = normalize_text(row.get("身份"))
 
-        try:
-            manual_points = float(row.get(manual_col) or 0)
-        except Exception:
-            manual_points = 0
+        # 解析格式，例如 "2 / 5" -> manual_tickets=2, manual_points=5.0
+        manual_val = row.get(manual_col)
+        manual_tickets, manual_points = parse_manual_points_string(manual_val)
 
         if name:
             member_to_section[name] = {
                 "section": section or "未分類",
-                "manual_points": manual_points,
+                "manual_tickets": manual_tickets,  # 新增
+                "manual_points": manual_points,    # 這裡的 manual_points 會包含單一數值或斜線後半部
                 "identity_code": identity_code or "5",
                 "identity": normalize_identity(identity_code),
+                "raw_manual_value": normalize_text(manual_val)  # 保留原始字串方便寫入
             }
 
     return member_to_section
@@ -1181,6 +1189,7 @@ def build_stats_summary(concert_code="tp"):
         member_info = member_to_section.get(name, {
             "section": "未分類",
             "manual_points": 0,
+            "manual_tickets": 0,  # 預設 0
         })
 
         section = member_info.get("section", "未分類")
@@ -1190,10 +1199,26 @@ def build_stats_summary(concert_code="tp"):
             section_members[section][name] += 1
 
     for name, info in member_to_section.items():
-        manual_points = float(info.get("manual_points", 0) or 0)
+        manual_tickets = int(info.get("manual_tickets", 0) or 0)
+        manual_points = float(info.get("manual_points", 0.0) or 0.0)
+        section = info.get("section", "未分類")
 
+        # 1. 累加推票積分
         if manual_points > 0:
             person_points[name] += manual_points
+
+        # 2. 累加手動推票張數
+        if manual_tickets > 0:
+            # 加到大統計總推票數
+            total_tickets += manual_tickets
+            
+            # 加到個人的推票張數排行
+            person_ticket_count[name] += manual_tickets
+            
+            # 加到聲部的總張數以及成員明細
+            if section not in EXCLUDED_REWARD_SECTIONS:
+                section_ticket_count[section] += manual_tickets
+                section_members[section][name] += manual_tickets
 
     ranking = sorted(
         [
