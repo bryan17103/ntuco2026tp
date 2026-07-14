@@ -85,6 +85,8 @@ HEADERS = [
     "是否已取票",
     "付款狀態",
     "是否已調票",
+    "備用欄位",
+    "OT調票訂單號碼",      
 ]
 
 
@@ -424,6 +426,7 @@ def group_order_rows(rows: List[dict]) -> List[dict]:
         picked_up = normalize_bool(row.get("是否已取票"))
         payment_done = normalize_bool(row.get("付款狀態"))
         ticket_adjusted = normalize_bool(row.get("是否已調票"))
+        ot_order_id = normalize_text(row.get("OT調票訂單號碼"))
 
         key = (order_id, dt, floor, row_label)
 
@@ -448,10 +451,13 @@ def group_order_rows(rows: List[dict]) -> List[dict]:
                 "payment_done": payment_done,
                 "ticket_adjusted": ticket_adjusted,
                 "order_status": status,
+                "seat_ot_map": {}
             }
 
         if seat_number is not None:
             grouped[key]["seats"].append(seat_number)
+            if ot_order_id:
+                grouped[key]["seat_ot_map"][seat_number] = ot_order_id
 
         grouped[key]["price"] += price
         zone = price_to_reward_zone(price)
@@ -476,6 +482,14 @@ def group_order_rows(rows: List[dict]) -> List[dict]:
 
     for item in results:
         item["seats"] = sorted(item["seats"])
+        
+        ot_display_list = []
+        for s in item["seats"]:
+            ot_id = item["seat_ot_map"].get(s)
+            if ot_id:
+                ot_display_list.append(f"{ot_id} ({s}號)")
+        
+        item["ot_order_id"] = " / ".join(ot_display_list) if ot_display_list else "無"
 
     results.sort(
         key=lambda x: (x["datetime"], x["floor"], x["row_label"]),

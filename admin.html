@@ -87,11 +87,12 @@
                             <th>鎖定狀態</th>
                             <th>付款狀態</th>
                             <th>取票狀態</th>
+                            <th>OT訂單號碼</th>
                         </tr>
                     </thead>
                     <tbody id="admin-orders-tbody">
                         <tr>
-                            <td colspan="10" class="empty-state">請先選擇場次</td>
+                            <td colspan="11" class="empty-state">請先選擇場次</td>
                         </tr>
                     </tbody>
                 </table>
@@ -227,7 +228,7 @@
             if (!orders.length) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="empty-state">查無資料</td>
+                        <td colspan="11" class="empty-state">查無資料</td>
                     </tr>
                 `;
                 return;
@@ -253,6 +254,7 @@
                     <td><div class="cell-center">${lockButtonHtml(order)}</div></td>
                     <td><div class="cell-center">${paymentButtonHtml(order)}</div></td>
                     <td><div class="cell-center">${pickupButtonHtml(order)}</div></td>
+                    <td class="info-text">${escapeHtml(order.ot_order_id || "")}</td>
                 </tr>
             `).join("");
         }
@@ -414,7 +416,7 @@
 
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="10" class="empty-state">${escapeHtml(message)}</td>
+                    <td colspan="11" class="empty-state">${escapeHtml(message)}</td>
                 </tr>
             `;
         }

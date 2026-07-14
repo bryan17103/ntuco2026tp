@@ -453,6 +453,10 @@ body.admin-page {
 .admin-table td:nth-child(10) {
     width: 150px;
 }
+.admin-table th:nth-child(11),
+.admin-table td:nth-child(11) {
+    width: 150px;
+}
 
 .info-text {
     color: var(--admin-main);
