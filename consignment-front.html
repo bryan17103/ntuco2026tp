@@ -124,6 +124,10 @@
                     <button id="frontdesk-search-btn" class="consignment-search-btn" type="button">
                         查詢
                     </button>
+
+                    <button id="frontdesk-export-btn" class="front-filter-btn" type="button" style="background: #249167; color: white; border: none;">
+                        📊 匯出 Excel 報表
+                    </button>
                 </section>
 
                 <section id="frontdesk-result-card" class="consignment-result-card query-result-card hidden">
@@ -270,6 +274,7 @@
         const frontdeskLoadBtn = document.getElementById("frontdesk-load-btn");
         const frontdeskKeyword = document.getElementById("frontdesk-keyword");
         const frontdeskSearchBtn = document.getElementById("frontdesk-search-btn");
+        const frontdeskExportBtn = document.getElementById("frontdesk-export-btn");
         const frontdeskResultCard = document.getElementById("frontdesk-result-card");
         const frontdeskResultTitle = document.getElementById("frontdesk-result-title");
         const frontdeskResultNote = document.getElementById("frontdesk-result-note");
@@ -391,6 +396,104 @@
 
         frontdeskLoadBtn.addEventListener("click", loadFrontdeskRecords);
         frontdeskSearchBtn.addEventListener("click", searchFrontdeskRecords);
+
+        // 綁定匯出按鈕點擊事件
+        frontdeskExportBtn.addEventListener("click", exportOwnerSummaryToExcel);
+
+        function exportOwnerSummaryToExcel() {      
+            const concertCode = frontdeskConcertCode.value;
+            
+            // 檢查是否有資料
+            if (!frontdeskRecordsCache || frontdeskRecordsCache.length === 0) {
+                alert("請先載入並刷新資料後，再進行匯出。");
+                return;
+            }
+
+            // 1. 先計算「全場總體統計 Summary」
+            const overallSummary = getRecordsSummary(frontdeskRecordsCache);
+            const overallUnpaid = overallSummary.totalAmount - overallSummary.collectedAmount;
+
+            // 2. 依照「寄票人」分組統計
+            const ownerMap = {};
+
+            frontdeskRecordsCache.forEach((record) => {
+                const owner = (record.owner_name || "未填寫寄票人").trim();
+                const quantity = Number(record.quantity || 0);
+                const price = Number(record.price || 0);
+                const pickupStatus = record.pickup_status || "pending";
+                const paymentStatus = record.payment_status || "unpaid";
+
+                if (!ownerMap[owner]) {
+                    ownerMap[owner] = {
+                        count: 0,             // 查詢筆數 (信封數)
+                        ticketCount: 0,       // 總張數
+                        totalAmount: 0,       // 前台應收
+                        collectedAmount: 0,   // 前台已收
+                        notPickedCount: 0,    // 未取信封
+                        pickedCount: 0        // 已取信封
+                    };
+                }
+
+                const stats = ownerMap[owner];
+                stats.count += 1;
+                stats.ticketCount += quantity;
+                stats.totalAmount += price;
+
+                if (pickupStatus === "picked_up") {
+                    stats.pickedCount += 1;
+                    if (paymentStatus === "paid") {
+                        stats.collectedAmount += price;
+                    }
+                } else {
+                    stats.notPickedCount += 1;
+                }
+            });
+
+            // 3. 構建 CSV 內容
+            let csvContent = "";
+
+            // --- 第一部分：場次總體 Summary 統計表 ---
+            csvContent += `嶋聲前台寄票報表_${concertLabels[concertCode] || concertCode}_2026-07-16\r\n\r\n`;
+            csvContent += "項目,數值,單位\r\n";
+            csvContent += `查詢筆數,${overallSummary.count},筆\r\n`;
+            csvContent += `總張數,${overallSummary.ticketCount},張\r\n`;
+            csvContent += `前台應收,${overallSummary.totalAmount},元\r\n`;
+            csvContent += `前台已收,${overallSummary.collectedAmount},元\r\n`;
+            csvContent += `前台未收,${overallUnpaid},元\r\n`;
+            csvContent += `未取信封,${overallSummary.notPickedCount},筆\r\n`;
+            csvContent += `已取信封,${overallSummary.pickedCount},筆\r\n`;
+            
+            // 間隔兩行，方便閱讀
+            csvContent += "\r\n\r\n";
+
+            // --- 第二部分：各寄票人分組明細對帳表 ---
+            csvContent += "【各寄票人明細統計表】\r\n";
+            csvContent += "寄票人,查詢筆數,總張數,前台應收,前台已收,前台未收,未取信封,已取信封\r\n";
+
+            Object.keys(ownerMap).forEach((owner) => {
+                const stats = ownerMap[owner];
+                const unpaid = stats.totalAmount - stats.collectedAmount;
+
+                csvContent += `"${owner.replace(/"/g, '""')}",${stats.count},${stats.ticketCount},${stats.totalAmount},${stats.collectedAmount},${unpaid},${stats.notPickedCount},${stats.pickedCount}\r\n`;
+            });
+
+            // 4. 加上 UTF-8 BOM 檔頭，確保 Excel 開啟不亂碼
+            const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
+            const blob = new Blob([bom, csvContent], { type: "text/csv;charset=utf-8;" });
+
+            // 5. 觸發瀏覽器下載
+            const link = document.createElement("a");
+            if (link.download !== undefined) {
+                const fileName = `嶋聲前台寄票報表_${concertLabels[concertCode] || concertCode}_2026-07-16.csv`;
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", fileName);
+                link.style.visibility = "hidden";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
 
         frontdeskListAllBtn.addEventListener("click", () => {
             setFrontdeskFilter("all");
