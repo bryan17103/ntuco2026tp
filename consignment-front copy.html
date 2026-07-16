@@ -74,14 +74,6 @@
                 </button>
             </div>
 
-            <div id="sync-status-banner" class="sync-status-banner all-synced">
-                    <div class="sync-info">
-                        <span id="sync-badge" class="sync-badge">雲端同步中</span>
-                        <span id="sync-text">本機狀態正常。所有取票操作皆已儲存。</span>
-                    </div>
-                    <button id="sync-retry-btn" class="front-action-btn" type="button">立即手動同步</button>
-                </div>
-
             <!-- 前台專用 -->
             <section id="frontdesk-panel" class="front-mode-panel active">
                 <section class="front-action-bar frontdesk-action-bar">
@@ -309,30 +301,16 @@
             kh: "高雄場",
         };
 
-        const syncStatusBanner = document.getElementById("sync-status-banner");
-        const syncBadge = document.getElementById("sync-badge");
-        const syncText = document.getElementById("sync-text");
-        const syncRetryBtn = document.getElementById("sync-retry-btn");
-
         let frontPassword = sessionStorage.getItem("front_password") || "";
         let frontdeskRecordsCache = [];
         let ticketRecordsCache = [];
         let frontdeskLoadedConcertCode = "";
         let frontdeskCurrentFilter = "all";
 
-        let pendingQueue = JSON.parse(localStorage.getItem("consignment_pending_queue")) || [];
-        let successCountThisSession = 0; // 本次開起視窗後，成功上傳的計數器
-        let isSyncing = false; // 防止重複同步
-
         if (frontPassword) {
-                    loginPanel.classList.add("hidden");
-                    appPanel.classList.remove("hidden");
-                    // 嘗試讀取本機快取，防止網頁不小心重新整理時資料消失
-                    tryRestoreFromLocalStorage();
-                    // 啟動時即檢查是否有未上傳佇列
-                    updateSyncBanner();
-                    syncPendingQueue(); 
-                }
+            loginPanel.classList.add("hidden");
+            appPanel.classList.remove("hidden");
+        }
 
         loginForm.addEventListener("submit", async (event) => {
             event.preventDefault();
@@ -424,19 +402,6 @@
 
         ticketLoadBtn.addEventListener("click", loadTicketRecords);
 
-        // 手動同步按鈕
-        syncRetryBtn.addEventListener("click", () => {
-            syncPendingQueue();
-        });
-
-        // 💡 額外加分：每隔 60 秒自動偵測一次網路並嘗試背景同步
-        setInterval(() => {
-            if (pendingQueue.length > 0 && !isSyncing && navigator.onLine) {
-                console.log("偵測到網路可能已恢復，自動嘗試同步佇列中...");
-                syncPendingQueue();
-            }
-        }, 60000);
-
         ticketOwnerKeyword.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
                 loadTicketRecords();
@@ -463,7 +428,6 @@
                 frontdeskLoadedConcertCode = concertCode;
                 frontdeskCurrentFilter = "all";
                 setFrontdeskFilter("all");
-                saveCacheToLocalStorage(concertCode, frontdeskRecordsCache);
 
                 frontdeskResultCard.classList.remove("hidden");
                 frontdeskResultTitle.textContent = "前台資料已載入";
@@ -985,58 +949,53 @@
                 `取票人：${record.audience_name}\n` +
                 `寄票人：${record.owner_name}\n` +
                 `金額：${amountText}\n\n` +
-                `【提示】此操作將立即在本地生效，並自動排程背景上傳。`
+                `確認後狀態會更新為 paid / picked_up。`
             );
 
             if (!confirmed) {
                 return;
             }
 
-            // 1. 🚀【立即於本地生效】不等待 API 回應
-            const updates = {
-                payment_status: price > 0 ? "paid" : "free",
-                pickup_status: "picked_up",
-            };
-            
-            // 更新本機記憶體快取
-            updateRecordInCache(frontdeskRecordsCache, record.consignment_id, updates);
-            // 同步寫入 localStorage 的本機快取檔案
-            saveCacheToLocalStorage(record.concert_code, frontdeskRecordsCache);
+            showLoading("更新中...");
 
-            // 2. 🎨【立即刷新 UI】前台人員不必等待，直接看到狀態變綠色「已取票」
-            const keyword = frontdeskKeyword.value.trim();
-            if (keyword) {
-                const matchedRecords = searchFrontdeskRecordsFromCache(
-                    frontdeskRecordsCache,
-                    keyword,
-                    record.concert_code
-                );
-                renderFrontdeskRecords(matchedRecords);
-            } else {
-                renderFrontdeskRecordsWithCurrentFilter();
-            }
-
-            // 3. 📥【加入待上傳同步佇列】
-            // 檢查是否已在佇列中，避免重複加入
-            const isAlreadyPending = pendingQueue.some(
-                item => item.consignment_id === record.consignment_id && item.concert_code === record.concert_code
-            );
-            
-            if (!isAlreadyPending) {
-                pendingQueue.push({
+            try {
+                const result = await patchJson("/api/consignment-front/paid-picked-up", {
                     concert_code: record.concert_code,
                     consignment_id: record.consignment_id,
-                    added_at: Date.now()
                 });
-                savePendingQueue();
+
+                if (!result.success) {
+                    alert(result.message || "更新失敗");
+                    return;
+                }
+
+                updateRecordInCache(frontdeskRecordsCache, record.consignment_id, {
+                    payment_status: price > 0 ? "paid" : "free",
+                    pickup_status: "picked_up",
+                });
+
+                const keyword = frontdeskKeyword.value.trim();
+
+                if (keyword) {
+                    const matchedRecords = searchFrontdeskRecordsFromCache(
+                        frontdeskRecordsCache,
+                        keyword,
+                        record.concert_code
+                    );
+
+                    renderFrontdeskRecords(matchedRecords);
+                } else {
+                    renderFrontdeskRecordsWithCurrentFilter();
+                }
+
+                frontdeskKeyword.value = "";
+                frontdeskKeyword.focus();
+
+            } catch (error) {
+                alert(error.message || "網路或伺服器錯誤，請稍後再試");
+            } finally {
+                hideLoading();
             }
-
-            // 4. 清空輸入框、游標聚焦，準備服務下一位
-            frontdeskKeyword.value = "";
-            frontdeskKeyword.focus();
-
-            // 5. 🔄【在背景偷偷同步】不卡住使用者流程
-            syncPendingQueue();
         }
 
         async function markSentToFront(record) {
@@ -1208,99 +1167,7 @@
                 .replaceAll('"', "&quot;")
                 .replaceAll("'", "&#039;");
         }
-
-        function saveCacheToLocalStorage(concertCode, records) {
-                    if (!concertCode) return;
-                    localStorage.setItem(`frontdesk_cache_${concertCode}`, JSON.stringify(records));
-                    localStorage.setItem("frontdesk_loaded_concert", concertCode);
-                }
-
-        function tryRestoreFromLocalStorage() {
-            const lastConcert = localStorage.getItem("frontdesk_loaded_concert");
-            if (lastConcert) {
-                const localData = localStorage.getItem(`frontdesk_cache_${lastConcert}`);
-                if (localData) {
-                    frontdeskRecordsCache = JSON.parse(localData);
-                    frontdeskLoadedConcertCode = lastConcert;
-                    frontdeskConcertCode.value = lastConcert;
-                    
-                    frontdeskResultCard.classList.remove("hidden");
-                    frontdeskResultTitle.textContent = "已從本地快取還原名單";
-                    frontdeskResultNote.textContent = `${concertLabels[lastConcert] || lastConcert}｜本地快取 ${frontdeskRecordsCache.length} 筆 (建議有網路時按刷新)。`;
-                    renderFrontdeskRecordsWithCurrentFilter();
-                }
-            }
-        }
-
-        function savePendingQueue() {
-            localStorage.setItem("consignment_pending_queue", JSON.stringify(pendingQueue));
-            updateSyncBanner();
-        }
-
-        function updateSyncBanner() {
-            const pendingCount = pendingQueue.length;
-
-            if (pendingCount === 0) {
-                syncStatusBanner.classList.add("all-synced");
-                syncBadge.textContent = "✔ 已連線";
-                syncBadge.style.background = "#249167";
-                syncText.innerHTML = `所有取票紀錄皆已成功同步至雲端！(本次瀏覽已成功上傳: <strong>${successCountThisSession}</strong> 筆)`;
-                syncRetryBtn.textContent = "重新檢查";
-            } else {
-                syncStatusBanner.classList.remove("all-synced");
-                syncBadge.textContent = "⚠️ 離線暫存中";
-                syncBadge.style.background = "#c0392b";
-                syncText.innerHTML = `偵測到網路不穩定！已有 <strong>${pendingCount}</strong> 筆取票尚未上傳雲端。(本機已為您安全儲存，網路回復後將自動重傳)`;
-                syncRetryBtn.textContent = isSyncing ? "同步中..." : "立刻重試同步";
-            }
-        }
-
-        async function syncPendingQueue() {
-            if (isSyncing || pendingQueue.length === 0) return;
-            isSyncing = true;
-            updateSyncBanner();
-
-            const queueCopy = [...pendingQueue]; // 複製一份避免同步操作時衝突
-
-            for (const task of queueCopy) {
-                try {
-                    // 發送上傳請求
-                    const response = await fetch("/api/consignment-front/paid-picked-up", {
-                        method: "PATCH",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-Front-Password": frontPassword,
-                        },
-                        body: JSON.stringify({
-                            concert_code: task.concert_code,
-                            consignment_id: task.consignment_id,
-                            front_password: frontPassword,
-                        }),
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok && result.success) {
-                        // 上傳成功：從佇列移除該項目
-                        pendingQueue = pendingQueue.filter(
-                            item => !(item.consignment_id === task.consignment_id && item.concert_code === task.concert_code)
-                        );
-                        successCountThisSession++;
-                        savePendingQueue(); // 存入本機
-                    } else {
-                        console.error(`同步 ${task.consignment_id} 失敗：${result.message || '伺服器拒絕'}`);
-                    }
-                } catch (error) {
-                    // 斷線、網路異常會走到這裡，不做任何處置，保留在佇列中等下次嘗試
-                    console.warn(`同步 ${task.consignment_id} 時遭遇網路連線問題：`, error);
-                    break; // 斷線了就不用繼續跑迴圈，直接中斷
-                }
-            }
-
-            isSyncing = false;
-            updateSyncBanner();
-        }
-
     </script>
 </body>
 </html>
+

@@ -115,25 +115,29 @@ def normalize_consignment_payment_status(value):
 def check_front_password_from_request(data=None):
     data = data or {}
 
+    # 1. 如果 Session 已經記錄登入成功，直接放行
     if session.get("front_ok"):
         return True, ""
 
     expected_password = os.getenv("FRONT_PASSWORD", "").strip()
+    if not expected_password:
+        return False, "尚未設定 FRONT_PASSWORD"
 
+    # 2. 同時嘗試從 Header (不分大小寫) 與 Request Body 中撈取密碼
     input_password = (
         request.headers.get("X-Front-Password")
+        or request.headers.get("x-front-password")  # 💡 新增：相容部分瀏覽器自動轉小寫 Header 的問題
         or data.get("front_password")
         or ""
     ).strip()
 
-    if not expected_password:
-        return False, "尚未設定 FRONT_PASSWORD"
-
+    # 3. 比對密碼
     if input_password != expected_password:
         return False, "前台密碼錯誤"
 
+    # 4. 比對成功，寫入 Session 紀錄
+    session["front_ok"] = True
     return True, ""
-
 
 def require_admin(fn):
     @wraps(fn)
@@ -147,7 +151,6 @@ def require_admin(fn):
         return fn(*args, **kwargs)
 
     return wrapper
-
 
 # ============================================================
 # Page Routes
