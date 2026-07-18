@@ -55,6 +55,7 @@ CONSIGNMENT_HEADERS = [
     "payment_status",
     "pickup_status",
     "note",
+    "front_note"
 ]
 
 _ws_cache = {}
@@ -1512,7 +1513,7 @@ def ensure_consignment_headers(concert_code="tp"):
     current = ws.row_values(1)
 
     if current != CONSIGNMENT_HEADERS:
-        ws.update("A1:K1", [CONSIGNMENT_HEADERS])
+        ws.update("A1:L1", [CONSIGNMENT_HEADERS])
 
 def get_consignment_users_rows():
     ensure_consignment_users_headers()
@@ -1594,6 +1595,7 @@ def append_consignment_rows(concert_code, rows):
             row.get("payment_status", ""),
             row.get("pickup_status", ""),
             note,
+            "",
         ])
 
     if values:
@@ -1792,6 +1794,7 @@ def format_consignment_record_for_front(row, concert_code):
         "payment_status": normalize_text(row.get("payment_status")),
         "pickup_status": normalize_text(row.get("pickup_status")),
         "note": normalize_text(row.get("note")),
+        "front_note": normalize_text(row.get("front_note")), # 新增讀取前台備註
         "concert_code": concert_code,
     }
 
@@ -2007,3 +2010,54 @@ def reset_consignment_owner_password(owner_name, consignment_id, new_password):
             return True, "密碼已重設"
 
     return False, "找不到寄票人帳號"
+
+def update_consignment_front_note(concert_code, consignment_id, front_note):
+    concert_code = normalize_text(concert_code).lower()
+    consignment_id = normalize_text(consignment_id).upper()
+    ensure_consignment_headers(concert_code)
+    ws = get_consignment_worksheet(concert_code)
+    rows = ws.get_all_records(expected_headers=CONSIGNMENT_HEADERS)
+
+    for index, row in enumerate(rows, start=2):
+        row_id = normalize_text(row.get("consignment_id")).upper()
+        if row_id == consignment_id:
+            safe_front_note = normalize_text(front_note)
+            if safe_front_note:
+                safe_front_note = "'" + safe_front_note
+            # L 欄是第 12 欄
+            ws.update_cell(index, 12, safe_front_note)
+            return True, "前台備註儲存成功"
+    return False, "找不到這筆寄票資料"
+
+# 修改原本的取票函式，讓它支援一併更新備註
+def mark_consignment_paid_and_picked_up(concert_code, consignment_id, front_note=None):
+    concert_code = normalize_text(concert_code).lower()
+    consignment_id = normalize_text(consignment_id).upper()
+
+    if concert_code not in CONSIGNMENT_SHEETS:
+        return False, "未知場次"
+
+    ensure_consignment_headers(concert_code)
+    ws = get_consignment_worksheet(concert_code)
+    rows = ws.get_all_records(expected_headers=CONSIGNMENT_HEADERS)
+
+    for index, row in enumerate(rows, start=2):
+        row_id = normalize_text(row.get("consignment_id")).upper()
+        if row_id != consignment_id:
+            continue
+
+        price = normalize_int(row.get("price")) or 0
+        payment_status = "free" if price == 0 else "paid"
+
+        # 如果有傳入前台備註，連同 L 欄 (第12欄) 一起包在一個陣列內更新
+        if front_note is not None:
+            safe_front_note = normalize_text(front_note)
+            if safe_front_note: safe_front_note = "'" + safe_front_note
+            # I 欄 到 L 欄 更新
+            ws.update(f"I{index}:L{index}", [[payment_status, "picked_up", row.get("note", ""), safe_front_note]])
+        else:
+            ws.update(f"I{index}:J{index}", [[payment_status, "picked_up"]])
+
+        return True, "已更新為完成付款且完成取票"
+
+    return False, "找不到這筆寄票資料"

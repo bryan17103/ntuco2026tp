@@ -263,9 +263,9 @@
             const khZoneTickets = khOverview.zone_tickets || {};
 
             document.getElementById("overview-grid").innerHTML = `
+                <!-- 暫時隱藏台北場
                 <div class="overview-row">
                     <div class="overview-row-title">台北場</div>
-
                     ${renderHeroCard("推票進度", tpOverview.total_tickets || 0, tpOverview.target_tickets || 0, "progress")}
                     ${renderMoneyCard("累積總金額", tpOverview.total_amount)}
                     ${renderZoneCard("500 元區", tpZoneTickets["500"] || 0, tpSeatZoneTotals["500"] || 0, "500", "tp")}
@@ -273,6 +273,7 @@
                     ${renderZoneCard("200 元區", tpZoneTickets["200"] || 0, tpSeatZoneTotals["200"] || 0, "200", "tp")}
                     ${renderMessageCard("我只是來湊位子的", "大家加油！")}
                 </div>
+                -->
 
                 <div class="overview-row">
                     <div class="overview-row-title">高雄場</div>

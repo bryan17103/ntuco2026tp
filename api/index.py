@@ -1132,6 +1132,7 @@ def api_consignment_front_paid_picked_up():
 
     concert_code = normalize_concert_code(data.get("concert_code"))
     consignment_id = normalize_text(data.get("consignment_id"))
+    front_note = data.get("front_note")
 
     if not concert_code:
         return jsonify({
@@ -1148,6 +1149,7 @@ def api_consignment_front_paid_picked_up():
     success, message = mark_consignment_paid_and_picked_up(
         concert_code=concert_code,
         consignment_id=consignment_id,
+        front_note=front_note
     )
 
     return jsonify({
@@ -1155,6 +1157,46 @@ def api_consignment_front_paid_picked_up():
         "message": message,
     }), 200 if success else 400
 
+@app.route("/api/consignment-front/update-note", methods=["PATCH"])
+def api_consignment_front_update_note():
+    data = request.get_json(silent=True) or {}
+
+    # 驗證前台密碼權限
+    ok, message = check_front_password_from_request(data)
+    if not ok:
+        return jsonify({
+            "success": False,
+            "message": message,
+        }), 401
+
+    concert_code = normalize_concert_code(data.get("concert_code"))
+    consignment_id = normalize_text(data.get("consignment_id"))
+    front_note = str(data.get("front_note", "")).strip()
+
+    if not concert_code:
+        return jsonify({
+            "success": False,
+            "message": "請選擇場次",
+        }), 400
+
+    if not consignment_id:
+        return jsonify({
+            "success": False,
+            "message": "缺少取票編號",
+        }), 400
+
+    # 呼叫先前在 sheet_repo.py 寫好的 update_consignment_front_note 函式
+    from lib.sheet_repo import update_consignment_front_note
+    success, message = update_consignment_front_note(
+        concert_code=concert_code,
+        consignment_id=consignment_id,
+        front_note=front_note
+    )
+
+    return jsonify({
+        "success": success,
+        "message": message,
+    }), 200 if success else 400
 
 @app.route("/api/consignment-front/sent", methods=["PATCH"])
 def api_consignment_front_sent():

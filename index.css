@@ -217,6 +217,51 @@ footer {
   opacity: 0.75;
 }
 
+/* =========================================================
+   漂浮意見表單按鈕 (Floating Feedback Button)
+========================================================= */
+.floating-feedback-btn {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 9999; 
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    
+    padding: 12px 20px;
+    border-radius: 999px;
+    background: #249167; 
+    color: white;
+    
+    font-size: 15px;
+    font-weight: 900;
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    
+    box-shadow: 0 6px 20px rgba(36, 145, 103, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.floating-feedback-btn:hover {
+    background: #1f7e59;
+    transform: translateY(-3px) scale(1.03); 
+    box-shadow: 0 10px 25px rgba(36, 145, 103, 0.45);
+}
+
+@media (max-width: 768px) {
+    .floating-feedback-btn {
+        right: 16px;
+        bottom: 16px;
+        padding: 10px 16px;
+        font-size: 13px;
+        box-shadow: 0 4px 14px rgba(36, 145, 103, 0.3);
+    }
+}
+
 @media (max-width: 900px) {
   .home-page {
     padding: 30px 18px 24px;

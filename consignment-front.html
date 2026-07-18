@@ -95,8 +95,8 @@
                     <label class="consignment-field">
                         <span>場次</span>
                         <select id="frontdesk-concert-code">
-                            <option value="tp">台北場</option>
                             <option value="kh">高雄場</option>
+                            <option value="tp">台北場</option>
                         </select>
                     </label>
 
@@ -190,8 +190,8 @@
                     <label class="consignment-field">
                         <span>場次</span>
                         <select id="ticket-concert-code">
-                            <option value="tp">台北場</option>
                             <option value="kh">高雄場</option>
+                            <option value="tp">台北場</option>
                         </select>
                     </label>
 
@@ -931,11 +931,10 @@
 
             const amountText = price > 0
                 ? `$${price.toLocaleString("zh-TW")}`
-                : "無需付款";
+                : "—";
 
-            const noteText = record.note
-                ? escapeHtml(record.note)
-                : "無備註";
+            const originalNote = record.note ? `（寄票人備註：${escapeHtml(record.note)}）` : "";
+            const frontNoteValue = record.front_note ? record.front_note : "";
 
             const alreadyPickedWarning = record.pickup_status === "picked_up"
                 ? `
@@ -969,8 +968,11 @@
                     </div>
 
                     <div class="front-fast-note-block">
-                        <span class="front-fast-label">備註</span>
-                        <strong class="front-fast-note">${noteText}</strong>
+                        <span class="front-fast-label">前台備註</span>
+                        <div class="front-fast-note-field-wrap">
+                            <input type="text" class="front-fast-note-input" value="${escapeHtml(frontNoteValue)}" placeholder="前台人員註記...">
+                            <button type="button" class="front-fast-save-note-btn">儲存</button>
+                        </div>
                     </div>
 
                     <div class="front-fast-action-block">
@@ -990,87 +992,71 @@
                     <span>${concertText}</span>
                     <span>寄票人：${escapeHtml(record.owner_name || "-")}</span>
                     <span>${quantity} 張</span>
+                    <span>${originalNote}</span>
                     <span class="record-status-pill ${statusClass}">
                         ${escapeHtml(statusText)}
                     </span>
                 </div>
             `;
 
+            const noteInput = card.querySelector(".front-fast-note-input");
+            const saveNoteBtn = card.querySelector(".front-fast-save-note-btn");
             const pickupBtn = card.querySelector(".front-fast-pickup-btn:not(.done)");
 
+            // 1. 單獨點擊「儲存」按鈕的功能
+            saveNoteBtn.addEventListener("click", async () => {
+                const currentNote = noteInput.value.trim();
+                record.front_note = currentNote; // 更新記憶體快取
+
+                // 更新 localStorage 的快取狀態
+                updateRecordInCache(frontdeskRecordsCache, record.consignment_id, { front_note: currentNote });
+                saveCacheToLocalStorage(record.concert_code, frontdeskRecordsCache);
+
+                saveNoteBtn.textContent = "儲存中...";
+                saveNoteBtn.disabled = true;
+
+                try {
+                    // 發送單獨儲存前台備註的 API 請求
+                    const response = await fetch("/api/consignment-front/update-note", {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-Front-Password": frontPassword,
+                        },
+                        body: JSON.stringify({
+                            concert_code: record.concert_code,
+                            consignment_id: record.consignment_id,
+                            front_note: currentNote,
+                            front_password: frontPassword
+                        })
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        saveNoteBtn.textContent = "✔ 已儲存";
+                        saveNoteBtn.style.background = "#249167";
+                    } else {
+                        alert("備註雲端儲存失敗，已記錄於本地快取：" + (result.message || "未知錯誤"));
+                        saveNoteBtn.textContent = "儲存";
+                    }
+                } catch(e) {
+                    // 即使網路失敗，斷線狀態下依然允許保存於本地
+                    alert("目前為網絡斷線狀態，備註已安全儲存於本機。");
+                    saveNoteBtn.textContent = "儲存";
+                } finally {
+                    saveNoteBtn.disabled = false;
+                    setTimeout(() => {
+                        saveNoteBtn.textContent = "儲存";
+                        saveNoteBtn.style.background = "#9a6b24";
+                    }, 2000);
+                }
+            });
+
+            // 2. 點擊「完成付款並取票」時，自動打包當前的 Note 文字並進行取票
             if (pickupBtn) {
                 pickupBtn.addEventListener("click", () => {
+                    // 執行取票前，先把輸入框當下的文字指派回去 record
+                    record.front_note = noteInput.value.trim();
                     markPaidAndPickedUp(record);
-                });
-            }
-
-            return card;
-        }
-
-        function createTicketRecordCard(record) {
-            const card = document.createElement("article");
-            card.className = "consignment-record-card compact front-record-card";
-
-            const price = Number(record.price || 0);
-            const quantity = Number(record.quantity || 0);
-            const statusText = consignmentStatusLabel(record);
-            const statusClass = consignmentStatusClass(record);
-            const concertText = concertLabels[record.concert_code] || record.concert_code || "-";
-            const isVipConsignment = String(record.consignment_id || "")
-                .toUpperCase()
-                .includes("VIP");
-
-            const amountText = price > 0
-                ? `$${price.toLocaleString("zh-TW")}`
-                : "無需付款";
-
-            const noteText = record.note
-                ? `｜備註：${escapeHtml(record.note)}`
-                : "";
-
-            const actionButton = record.pickup_status === "pending"
-                ? `
-                    <button class="front-action-btn sent-btn" type="button">
-                        已寄放前台
-                    </button>
-                `
-                : "";
-
-            card.innerHTML = `
-                <div class="compact-record-top">
-                    <strong class="consignment-id-pill ${isVipConsignment ? "vip-id-pill" : ""}">
-                        ${escapeHtml(record.consignment_id)}
-                    </strong>
-
-                    <div class="compact-record-main">
-                        <div class="compact-record-name">
-                            ${escapeHtml(record.audience_name)}
-                        </div>
-
-                        <div class="compact-record-sub">
-                            ${concertText}
-                            ｜寄票人：${escapeHtml(record.owner_name || "-")}
-                            ｜${quantity} 張
-                            ｜${amountText}
-                            ${noteText}
-                        </div>
-                    </div>
-
-                    <div class="compact-record-actions">
-                        <span class="record-status-pill ${statusClass}">
-                            ${escapeHtml(statusText)}
-                        </span>
-
-                        ${actionButton}
-                    </div>
-                </div>
-            `;
-
-            const sentBtn = card.querySelector(".sent-btn");
-
-            if (sentBtn) {
-                sentBtn.addEventListener("click", () => {
-                    markSentToFront(record);
                 });
             }
 
@@ -1129,6 +1115,7 @@
                 pendingQueue.push({
                     concert_code: record.concert_code,
                     consignment_id: record.consignment_id,
+                    front_note: record.front_note || "", // 增傳前台備註
                     added_at: Date.now()
                 });
                 savePendingQueue();
@@ -1378,6 +1365,7 @@
                             concert_code: task.concert_code,
                             consignment_id: task.consignment_id,
                             front_password: frontPassword,
+                            front_note: task.front_note || "" // 增加此行
                         }),
                     });
 

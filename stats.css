@@ -383,11 +383,33 @@ tr:last-child td {
     -webkit-overflow-scrolling: touch;
 }
 
+/* 讓各聲部統計與推票獎勵在高度超過 420px 時出現垂直捲軸 */
 .section-summary-list,
 .reward-table-scroll {
-    max-height: none;
-    overflow: visible;
-    border-radius: 0;
+    max-height: 420px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: 18px;
+    padding-right: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 同時為這兩個區塊加上自訂的漂亮美化捲軸 */
+.section-summary-list::-webkit-scrollbar,
+.reward-table-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.section-summary-list::-webkit-scrollbar-track,
+.reward-table-scroll::-webkit-scrollbar-track {
+    background: rgba(120, 130, 126, 0.10);
+    border-radius: 999px;
+}
+
+.section-summary-list::-webkit-scrollbar-thumb,
+.reward-table-scroll::-webkit-scrollbar-thumb {
+    background: rgba(95, 129, 120, 0.42);
+    border-radius: 999px;
 }
 
 .ranking-table-scroll::-webkit-scrollbar {
