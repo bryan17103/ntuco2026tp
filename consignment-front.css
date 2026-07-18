@@ -73,7 +73,7 @@
 
 /* Action Bar */
 
-.front-action-bar {
+.frontdesk-action-bar {
     display: grid;
     grid-template-columns:
         200px
@@ -164,6 +164,61 @@
 
 .front-keyword-field {
     min-width: 0;
+}
+
+/* 票務 Action Bar */
+/* 💡 票務專用 Action Bar：橫向排列、靠左對齊，並完整補回原本的白色半透明卡片質感 */
+.front-action-bar.ticket-action-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-end !important;
+    justify-content: flex-start !important;
+    gap: 16px !important;
+    width: 100% !important;
+
+    /* 💡 完美復原原本消失的白色卡片樣式 */
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.72) !important;
+    border-radius: 24px !important;
+    padding: 18px 20px !important;
+    box-shadow:
+        0 12px 28px rgba(45, 65, 62, 0.09),
+        inset 0 1px 0 rgba(255, 255, 255, 0.86) !important;
+}
+
+/* 控制標題與包裹箱子圖示不要被壓縮 */
+.ticket-action-bar .front-action-title {
+    flex-shrink: 0;
+    width: auto;
+    margin-right: 12px;
+}
+
+/* 控制「場次」選單的精美寬度 */
+.ticket-action-bar .consignment-field:has(#ticket-concert-code) {
+    width: 140px !important;
+    flex-shrink: 0;
+}
+
+/* 控制「寄票人姓名」輸入框的精美寬度 */
+.ticket-action-bar .consignment-field.front-keyword-field,
+.ticket-action-bar .consignment-field:has(#ticket-owner-keyword) {
+    width: 320px !important;
+    flex-shrink: 0;
+    grid-column: auto !important;
+}
+
+/* 控制「載入資料」按鈕的寬度，並跟隔壁輸入框對齊高度 */
+#ticket-load-btn {
+    width: 120px !important;
+    height: 44px !important;
+    flex-shrink: 0;
+    margin-bottom: 0 !important;
+}
+
+/* 確保裡面的 input 和 select 不要爆開 */
+.ticket-action-bar .consignment-field input,
+.ticket-action-bar .consignment-field select {
+    width: 100% !important;
 }
 
 /* Results */

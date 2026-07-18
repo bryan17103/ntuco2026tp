@@ -1063,6 +1063,135 @@
             return card;
         }
 
+        function createTicketRecordCard(record) {
+            const card = document.createElement("article");
+            card.className = "consignment-record-card compact front-record-card";
+
+            const price = Number(record.price || 0);
+            const quantity = Number(record.quantity || 0);
+            const statusText = consignmentStatusLabel(record);
+            const statusClass = consignmentStatusClass(record);
+            const concertText = concertLabels[record.concert_code] || record.concert_code || "-";
+            const isVipConsignment = String(record.consignment_id || "")
+                .toUpperCase()
+                .includes("VIP");
+
+            const amountText = price > 0
+                ? `$${price.toLocaleString("zh-TW")}`
+                : "無需付款";
+
+            const originalNoteText = record.note
+                ? `｜寄票人備註：${escapeHtml(record.note)}`
+                : "";
+
+            const frontNoteValue = record.front_note ? record.front_note : "";
+
+            const actionButton = record.pickup_status === "pending"
+                ? `
+                    <button class="front-action-btn sent-btn" type="button">
+                        已寄放前台
+                    </button>
+                `
+                : "";
+
+            card.innerHTML = `
+                <div class="compact-record-top" style="align-items: center;">
+                    <strong class="consignment-id-pill ${isVipConsignment ? "vip-id-pill" : ""}">
+                        ${escapeHtml(record.consignment_id)}
+                    </strong>
+
+                    <div class="compact-record-main">
+                        <div class="compact-record-name" style="font-weight:900; font-size:20px; color:#2f3c39;">
+                            ${escapeHtml(record.audience_name)}
+                        </div>
+
+                        <div class="compact-record-sub" style="margin-top: 4px; margin-bottom: 8px;">
+                            ${concertText}
+                            ｜寄票人：${escapeHtml(record.owner_name || "-")}
+                            ｜${quantity} 張
+                            ｜金額：<strong>${amountText}</strong>
+                            ${originalNoteText}
+                        </div>
+                        
+                        <!-- 💡 新增：票務介面的前台備註輸入欄位與儲存按鈕 -->
+                        <div class="front-fast-note-field-wrap" style="max-width: 500px; display: flex; gap: 8px; margin-top: 6px;">
+                            <input type="text" class="front-fast-note-input ticket-front-note-input" value="${escapeHtml(frontNoteValue)}" placeholder="請輸入前台備註" style="height:34px; font-size:14px;">
+                            <button type="button" class="front-fast-save-note-btn ticket-save-note-btn" style="height:34px; font-size:12px; padding:0 12px; border-radius:10px;">儲存備註</button>
+                        </div>
+                    </div>
+
+                    <div class="compact-record-actions">
+                        <span class="record-status-pill ${statusClass}">
+                            ${escapeHtml(statusText)}
+                        </span>
+
+                        ${actionButton}
+                    </div>
+                </div>
+            `;
+
+            const noteInput = card.querySelector(".ticket-front-note-input");
+            const saveNoteBtn = card.querySelector(".ticket-save-note-btn");
+            const sentBtn = card.querySelector(".sent-btn");
+
+            // 💡 監聽 1：票務端單獨儲存前台備註的功能
+            saveNoteBtn.addEventListener("click", async (e) => {
+                e.stopPropagation(); // 防止觸發其他卡片點擊
+                const currentNote = noteInput.value.trim();
+                record.front_note = currentNote; // 更新快取
+
+                // 同步更新記憶體與本地快取（確保兩邊分頁名單同步）
+                updateRecordInCache(frontdeskRecordsCache, record.consignment_id, { front_note: currentNote });
+                updateRecordInCache(ticketRecordsCache, record.consignment_id, { front_note: currentNote });
+                saveCacheToLocalStorage(record.concert_code, frontdeskRecordsCache);
+
+                saveNoteBtn.textContent = "儲存中...";
+                saveNoteBtn.disabled = true;
+
+                try {
+                    const response = await fetch("/api/consignment-front/update-note", {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-Front-Password": frontPassword,
+                        },
+                        body: JSON.stringify({
+                            concert_code: record.concert_code,
+                            consignment_id: record.consignment_id,
+                            front_note: currentNote,
+                            front_password: frontPassword
+                        })
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        saveNoteBtn.textContent = "✔ 已儲存";
+                        saveNoteBtn.style.background = "#249167";
+                    } else {
+                        alert("備註雲端儲存失敗：" + (result.message || "未知錯誤"));
+                        saveNoteBtn.textContent = "儲存備註";
+                    }
+                } catch(err) {
+                    alert("網路連線問題，備註已安全暫存於此網頁，請勿重新整理。");
+                    saveNoteBtn.textContent = "儲存備註";
+                } finally {
+                    saveNoteBtn.disabled = false;
+                    setTimeout(() => {
+                        saveNoteBtn.textContent = "儲存備註";
+                        saveNoteBtn.style.background = "#9a6b24";
+                    }, 2000);
+                }
+            });
+
+            // 監聽 2：原本的已寄放前台按鈕
+            if (sentBtn) {
+                sentBtn.addEventListener("click", () => {
+                    markSentToFront(record);
+                });
+            }
+
+            return card;
+        }
+
         async function markPaidAndPickedUp(record) {
             const price = Number(record.price || 0);
             const amountText = price > 0

@@ -72,6 +72,54 @@
                 <button id="admin-search-btn" class="admin-search-btn" type="button">查詢</button>
             </div>
 
+            <!-- 查詢姓名後的金額與票數統計小卡 -->
+            <div class="orders-summary-grid hidden" id="admin-summary-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 6px 0 14px;">
+            
+                <div class="summary-card" style="min-height: auto; padding: 16px 20px; background: rgba(255,255,255,0.86); border: 1px solid rgba(255,255,255,0.62); border-radius: 20px; box-shadow: 0 12px 28px rgba(45, 65, 62, 0.08);">
+                    <div class="summary-card-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <div class="summary-icon" style="width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(127,159,152,0.16); font-size: 18px;">💰</div>
+                        <div class="summary-label" style="font-family: 'Noto Serif TC', serif; font-size: 18px; font-weight: 900; color: #2f3c39;">金額統計</div>
+                    </div>
+            
+                    <div class="summary-metric-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div class="summary-metric-label" style="display: flex; align-items: center; gap: 8px; color: #4e5b58; font-size: 14px; font-weight: 800;">
+                            <span class="summary-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #7f9f98;"></span>已付金額
+                        </div>
+                        <div class="summary-metric-value" id="admin-paid-amount" style="color: #4f6f73; font-size: 18px; font-weight: 900;">$0</div>
+                    </div>
+            
+                    <div class="summary-metric-row" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="summary-metric-label" style="display: flex; align-items: center; gap: 8px; color: #4e5b58; font-size: 14px; font-weight: 800;">
+                            <span class="summary-dot muted" style="width: 8px; height: 8px; border-radius: 50%; background: #b7bdbc;"></span>未付金額
+                        </div>
+                        <div class="summary-metric-value" id="admin-unpaid-amount" style="color: #4f6f73; font-size: 18px; font-weight: 900;">$0</div>
+                    </div>
+                </div>
+            
+                <!-- 票數統計卡 -->
+                <div class="summary-card" style="min-height: auto; padding: 16px 20px; background: rgba(255,255,255,0.86); border: 1px solid rgba(255,255,255,0.62); border-radius: 20px; box-shadow: 0 12px 28px rgba(45, 65, 62, 0.08);">
+                    <div class="summary-card-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <div class="summary-icon" style="width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(127,159,152,0.16); font-size: 18px;">🎟️</div>
+                        <div class="summary-label" style="font-family: 'Noto Serif TC', serif; font-size: 18px; font-weight: 900; color: #2f3c39;">票數統計</div>
+                    </div>
+            
+                    <div class="summary-metric-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div class="summary-metric-label" style="display: flex; align-items: center; gap: 8px; color: #4e5b58; font-size: 14px; font-weight: 800;">
+                            <span class="summary-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #7f9f98;"></span>已取票數
+                        </div>
+                        <div class="summary-metric-value" style="color: #4f6f73; font-size: 18px; font-weight: 900;"><span id="admin-picked-count">0</span> 張</div>
+                    </div>
+            
+                    <div class="summary-metric-row" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="summary-metric-label" style="display: flex; align-items: center; gap: 8px; color: #4e5b58; font-size: 14px; font-weight: 800;">
+                            <span class="summary-dot muted" style="width: 8px; height: 8px; border-radius: 50%; background: #b7bdbc;"></span>未取票數
+                        </div>
+                        <div class="summary-metric-value" style="color: #4f6f73; font-size: 18px; font-weight: 900;"><span id="admin-unpicked-count">0</span> 張</div>
+                    </div>
+                </div>
+                
+            </div>
+
             <div class="admin-table-card">
             <div class="admin-table-scroll">
                 <table class="admin-table">
@@ -225,13 +273,53 @@
             const tbody = document.getElementById("admin-orders-tbody");
             if (!tbody) return;
 
+            const summaryGrid = document.getElementById("admin-summary-grid");
+            const paidAmountEl = document.getElementById("admin-paid-amount");
+            const unpaidAmountEl = document.getElementById("admin-unpaid-amount");
+            const pickedCountEl = document.getElementById("admin-picked-count");
+            const unpickedCountEl = document.getElementById("admin-unpicked-count");
+
             if (!orders.length) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="11" class="empty-state">查無資料</td>
                     </tr>
                 `;
+                summaryGrid?.classList.add("hidden");
                 return;
+            }
+
+            let paidAmount = 0;
+            let unpaidAmount = 0;
+            let pickedCount = 0;
+            let unpickedCount = 0;
+
+            orders.forEach(order => {
+                const ticketVolume = Array.isArray(order.seats) ? order.seats.length : 0; 
+                const orderPrice = Number(order.price || 0); 
+
+                if (order.payment_done) {
+                    paidAmount += orderPrice;
+                } else {
+                    unpaidAmount += orderPrice;
+                }
+
+                if (order.picked_up) {
+                    pickedCount += ticketVolume;
+                } else {
+                    unpickedCount += ticketVolume;
+                }
+            });
+
+            if (paidAmountEl) paidAmountEl.textContent = `$${paidAmount.toLocaleString()}`;
+            if (unpaidAmountEl) unpaidAmountEl.textContent = `$${unpaidAmount.toLocaleString()}`;
+            if (pickedCountEl) pickedCountEl.textContent = pickedCount;
+            if (unpickedCountEl) unpickedCountEl.textContent = unpickedCount;
+
+            if (currentKeyword && currentKeyword.original !== "") {
+                summaryGrid?.classList.remove("hidden");
+            } else {
+                summaryGrid?.classList.add("hidden");
             }
 
             tbody.innerHTML = orders.map(order => `
@@ -442,6 +530,7 @@
             setAdminEmptyState(`${label}資料載入中...`);
             await loadOrderOpenStatus();
             await searchAdminOrders();
+            document.getElementById("admin-summary-grid")?.classList.add("hidden");
         }
 
         document.querySelectorAll(".concert-select-btn").forEach(btn => {
