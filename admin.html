@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>《嶋聲》票務專用</title>
+    <title>《嶋聲》票務專用控制台</title>
     <link rel="icon" type="image/png" href="/NTUCO.png">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,30 +14,28 @@
 </head>
 <body class="admin-page">
     <div class="admin-shell">
-        <div class="admin-topbar">
+        <div class="admin-topbar" style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 16px; margin-bottom: 8px;">
             <div class="admin-title-wrap">
-                <h1>《嶋聲》票務專用</h1>
-                <p>加油加油</p>
+                <h1 style="margin: 0; font-size: 26px;">《嶋聲》票務專用控制台</h1>
+                <p style="margin: 4px 0 0; font-size: 13px;">公演現場收單、付款對帳與取票狀態管理</p>
             </div>
         
-            <div style="display:flex; flex-direction:column; gap:10px;">
-        
-                <button
-                    id="order-open-toggle-btn"
-                    type="button"
-                    class="order-open-btn"
-                >
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <button id="order-open-toggle-btn" type="button" class="order-open-btn" style="height: 36px; min-height: auto; padding: 0 16px; font-size: 13px; border-radius: 10px; margin: 0;">
                     讀取購票狀態中...
                 </button>
         
-                <a href="/" class="back-link-btn">
-                    回到首頁
-                </a>
-        
-                <a href="/edit.html" class="back-link-btn">
-                    修改資料
-                </a>
-        
+                <div style="display: flex; align-items: center; background: rgba(0,0,0,0.04); padding: 4px; border-radius: 12px; gap: 4px;">
+                    <a href="/" class="back-link-btn" style="height: 28px; min-height: auto; padding: 0 12px; font-size: 13px; border-radius: 8px; border: none; background: transparent; color: #555;">
+                        🏠 首頁
+                    </a>
+                    <a href="/booking.html" class="back-link-btn" style="height: 28px; min-height: auto; padding: 0 12px; font-size: 13px; border-radius: 8px; border: none; background: transparent; color: #555;">
+                        🎟️ 調票紀錄
+                    </a>
+                    <a href="/edit.html" class="back-link-btn" style="height: 28px; min-height: auto; padding: 0 12px; font-size: 13px; border-radius: 8px; border: none; background: transparent; color: #555;">
+                        ⚙️ 修改資料
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -48,12 +46,8 @@
             </div>
 
             <div class="admin-concert-actions">
-                <button class="concert-select-btn" type="button" data-concert="tp">
-                    台北場
-                </button>
-                <button class="concert-select-btn" type="button" data-concert="kh">
-                    高雄場
-                </button>
+                <button class="concert-select-btn" type="button" data-concert="tp">台北場</button>
+                <button class="concert-select-btn" type="button" data-concert="kh">高雄場</button>
             </div>
         </section>
 
@@ -62,32 +56,30 @@
                 目前場次：尚未選擇
             </div>
 
-            <div class="admin-search-card">
-                <input
-                    id="admin-keyword-input"
-                    class="admin-search-input"
-                    type="text"
-                    placeholder="輸入姓名或訂單ID"
-                />
-                <button id="admin-search-btn" class="admin-search-btn" type="button">查詢</button>
+            <!-- 篩選面板：批次儲存功能 -->
+            <div style="background: rgba(255,255,255,0.7); padding: 14px 24px; border-radius: 20px; margin: 10px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+                <div class="admin-search-card" style="margin: 0;">
+                    <input id="admin-keyword-input" class="admin-search-input" type="text" placeholder="輸入姓名或訂單ID..." style="height: 38px; border-radius: 12px;" />
+                    <button id="admin-search-btn" class="admin-search-btn" type="button" style="height: 38px; border-radius: 12px; line-height: 1; padding: 0 20px;">查詢</button>
+                </div>
+                <button id="admin-save-changes-btn" class="pill-btn orange" type="button" style="height: 38px; border-radius: 12px; display: inline-flex; align-items: center; gap: 6px; min-width: auto; padding: 0 16px; margin: 0; box-shadow: 0 4px 12px rgba(127,159,152,0.3);">
+                    💾 儲存後台變更 <span id="admin-unsaved-badge" style="background:#d64545; color:white; border-radius:50%; width:18px; height:18px; font-size:11px; display:none; align-items:center; justify-content:center; font-weight:900;">0</span>
+                </button>
             </div>
 
-            <!-- 查詢姓名後的金額與票數統計小卡 -->
+            <!-- 金額與票數統計小卡 -->
             <div class="orders-summary-grid hidden" id="admin-summary-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 6px 0 14px;">
-            
                 <div class="summary-card" style="min-height: auto; padding: 16px 20px; background: rgba(255,255,255,0.86); border: 1px solid rgba(255,255,255,0.62); border-radius: 20px; box-shadow: 0 12px 28px rgba(45, 65, 62, 0.08);">
                     <div class="summary-card-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
                         <div class="summary-icon" style="width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(127,159,152,0.16); font-size: 18px;">💰</div>
                         <div class="summary-label" style="font-family: 'Noto Serif TC', serif; font-size: 18px; font-weight: 900; color: #2f3c39;">金額統計</div>
                     </div>
-            
                     <div class="summary-metric-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                         <div class="summary-metric-label" style="display: flex; align-items: center; gap: 8px; color: #4e5b58; font-size: 14px; font-weight: 800;">
                             <span class="summary-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #7f9f98;"></span>已付金額
                         </div>
                         <div class="summary-metric-value" id="admin-paid-amount" style="color: #4f6f73; font-size: 18px; font-weight: 900;">$0</div>
                     </div>
-            
                     <div class="summary-metric-row" style="display: flex; align-items: center; justify-content: space-between;">
                         <div class="summary-metric-label" style="display: flex; align-items: center; gap: 8px; color: #4e5b58; font-size: 14px; font-weight: 800;">
                             <span class="summary-dot muted" style="width: 8px; height: 8px; border-radius: 50%; background: #b7bdbc;"></span>未付金額
@@ -96,20 +88,17 @@
                     </div>
                 </div>
             
-                <!-- 票數統計卡 -->
                 <div class="summary-card" style="min-height: auto; padding: 16px 20px; background: rgba(255,255,255,0.86); border: 1px solid rgba(255,255,255,0.62); border-radius: 20px; box-shadow: 0 12px 28px rgba(45, 65, 62, 0.08);">
                     <div class="summary-card-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
                         <div class="summary-icon" style="width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(127,159,152,0.16); font-size: 18px;">🎟️</div>
                         <div class="summary-label" style="font-family: 'Noto Serif TC', serif; font-size: 18px; font-weight: 900; color: #2f3c39;">票數統計</div>
                     </div>
-            
                     <div class="summary-metric-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                         <div class="summary-metric-label" style="display: flex; align-items: center; gap: 8px; color: #4e5b58; font-size: 14px; font-weight: 800;">
                             <span class="summary-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #7f9f98;"></span>已取票數
                         </div>
                         <div class="summary-metric-value" style="color: #4f6f73; font-size: 18px; font-weight: 900;"><span id="admin-picked-count">0</span> 張</div>
                     </div>
-            
                     <div class="summary-metric-row" style="display: flex; align-items: center; justify-content: space-between;">
                         <div class="summary-metric-label" style="display: flex; align-items: center; gap: 8px; color: #4e5b58; font-size: 14px; font-weight: 800;">
                             <span class="summary-dot muted" style="width: 8px; height: 8px; border-radius: 50%; background: #b7bdbc;"></span>未取票數
@@ -117,34 +106,93 @@
                         <div class="summary-metric-value" style="color: #4f6f73; font-size: 18px; font-weight: 900;"><span id="admin-unpicked-count">0</span> 張</div>
                     </div>
                 </div>
-                
             </div>
 
+            <!-- 主資料表格 -->
             <div class="admin-table-card">
-            <div class="admin-table-scroll">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>訂單日期與時間</th>
-                            <th>訂單ID</th>
-                            <th>姓名</th>
-                            <th>排數</th>
-                            <th>座位</th>
-                            <th>票價</th>
-                            <th>備註</th>
-                            <th>鎖定狀態</th>
-                            <th>付款狀態</th>
-                            <th>取票狀態</th>
-                            <th>OT訂單號碼</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-orders-tbody">
-                        <tr>
-                            <td colspan="11" class="empty-state">請先選擇場次</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="admin-table-scroll">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 150px;">訂單日期與時間</th>
+                                <th style="width: 140px;">訂單ID</th>
+                                <th style="width: 100px;">姓名</th>
+                                <th style="width: 100px;">排數</th>
+                                <th style="width: 140px;">座位</th>
+                                <th style="width: 90px;">票價</th>
+                                <th style="width: 180px;">備註</th>
+                                <th style="width: 110px;">防護</th>
+                                <th style="width: 140px;">取票狀態</th>
+                                <th style="width: 140px;">付款狀態</th>
+                                <th style="width: 150px;">OT訂單號碼</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-orders-tbody">
+                            <tr>
+                                <td colspan="11" class="empty-state">請先選擇場次</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            <!-- 📊 每日現場帳務核對面板 -->
+            <div class="admin-table-card" style="margin-top: 24px; padding: 22px; background: rgba(255,255,255,0.9);">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+                    <div>
+                        <h2 style="margin: 0; font-family: 'Noto Serif TC', serif; font-size: 20px; font-weight: 900; color: #2f3c39;">📊 每日現場帳務核對</h2>
+                        <p style="margin: 4px 0 0; font-size: 13px; color: #6b7471;">依據 Google Sheet 中 P 欄與 Q 欄統計當日現場收受之金額明細</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-weight: 800; font-size: 14px;">🔍 篩選：</span>
+                            <input id="finance-filter-input" type="text" placeholder="輸入人名、現金或轉帳..." style="width: 180px; height: 34px; border-radius: 10px; padding: 0 10px; font-size: 13px; border: 2px solid #d8d8d8; outline: none;" />
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-weight: 800; font-size: 14px;">📅 選擇對帳日期：</span>
+                            <select id="finance-date-select" class="admin-search-input" style="width: 140px; height: 36px; border-radius: 10px; padding: 0 8px; margin:0; font-size: 13px; border: 2px solid #d8d8d8; background:#fff; outline:none; cursor:pointer;">
+                                <option value="">讀取中...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div> <!-- 💡 Bug 修正：在這裡補上了閉合的 div，避免佈局塌陷 -->
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px;">
+                    <div style="background: #e7efff; padding: 14px; border-radius: 14px; text-align: center; border: 1px solid #c7dcff;">
+                        <div style="font-size: 13px; font-weight: 800; color: #356fcb; margin-bottom: 4px;">🔵 今日現金總收</div>
+                        <div id="finance-cash-sum" style="font-size: 20px; font-weight: 900; color: #1e4ba3;">$0</div>
+                    </div>
+                    <div style="background: #e9f7ef; padding: 14px; border-radius: 14px; text-align: center; border: 1px solid #ccefdc;">
+                        <div style="font-size: 13px; font-weight: 800; color: #249167; margin-bottom: 4px;">🟢 今日轉帳總收</div>
+                        <div id="finance-bank-sum" style="font-size: 20px; font-weight: 900; color: #166645;">$0</div>
+                    </div>
+                    <div style="background: #fff6e5; padding: 14px; border-radius: 14px; text-align: center; border: 1px solid #ffdcb3;">
+                        <div style="font-size: 13px; font-weight: 800; color: #b86d14; margin-bottom: 4px;">💻 當日總收入 (筆數)</div>
+                        <div id="finance-grand-sum" style="font-size: 20px; font-weight: 900; color: #8f5005;">$0 (<span id="finance-count">0</span>筆)</div>
+                    </div>
+                </div>
+
+                <div class="admin-table-scroll" style="max-height: 280px; border-radius: 14px;">
+                    <table class="admin-table" style="min-width: 800px;">
+                        <thead>
+                            <tr style="background: #f7f7f7;">
+                                <th style="width: 80px; padding: 10px;">時間</th>
+                                <th style="width: 100px; padding: 10px;">姓名</th>
+                                <th style="width: 100px; padding: 10px;">收款模式</th>
+                                <th style="width: 90px; padding: 10px;">金額</th>
+                                <th style="width: 160px; padding: 10px;">座位明細</th>
+                                <th style="width: 120px; padding: 10px;">訂單ID</th>
+                                <th style="width: 150px; padding: 10px;">備註</th>
+                            </tr>
+                        </thead>
+                        <tbody id="finance-tbody">
+                            <tr>
+                                <td colspan="7" class="empty-state" style="padding: 16px;">暫無對帳明細</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -152,10 +200,10 @@
     <script>
         let authed = false;
         let currentConcert = null;
-        const concertLabels = {
-            tp: "台北場",
-            kh: "高雄場"
-        };
+        const concertLabels = { tp: "台北場", kh: "高雄場" };
+        
+        let adminUnsavedChanges = {}; 
+        const financeDateSelect = document.getElementById("finance-date-select");
 
         function requireConcertSelected() {
             if (currentConcert) return true;
@@ -163,24 +211,9 @@
             return false;
         }
 
-        function buildModeQuery(prefix = "?") {
-            if (!currentConcert) return "";
-            return `${prefix}mode=${encodeURIComponent(currentConcert)}`;
-        }
-        
         function showUnauthorized() {
             document.body.innerHTML = `
-                <div style="
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-family: Arial, 'Noto Sans TC', sans-serif;
-                    background: linear-gradient(135deg, #5f7f82, #8ea7a3);
-                    color: white;
-                    font-size: 28px;
-                    font-weight: 800;
-                ">
+                <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: Arial, 'Noto Sans TC', sans-serif; background: linear-gradient(135deg, #5f7f82, #8ea7a3); color: white; font-size: 28px; font-weight: 800;">
                     你不是票務 :(
                 </div>
             `;
@@ -191,38 +224,21 @@
                 authed = true;
                 return true;
             }
-        
             const input = prompt("請輸入密碼");
-            if (!input) {
-                showUnauthorized();
-                return false;
-            }
-        
+            if (!input) { showUnauthorized(); return false; }
             const res = await fetch("/api/admin/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ password: input })
             });
-        
             const raw = await res.text();
-            console.log("login status:", res.status);
-            console.log("login raw:", raw);
-        
             let data;
-            try {
-                data = JSON.parse(raw);
-            } catch {
-                alert(`登入 API 回傳不是 JSON：${res.status}`);
-                showUnauthorized();
-                return false;
-            }
-        
+            try { data = JSON.parse(raw); } catch { showUnauthorized(); return false; }
             if (res.ok && data.success) {
                 sessionStorage.setItem("admin_ok", "1");
                 authed = true;
                 return true;
             }
-        
             alert(data.message || "你不是票務 :(");
             showUnauthorized();
             return false;
@@ -239,34 +255,18 @@
                 .replaceAll("'", "&#039;");
         }
 
-        function lockButtonHtml(order) {
-            if (order.order_status === "locked") {
-                return `<button class="pill-btn dark" type="button" onclick="toggleLock('${escapeHtml(order.order_id)}', '${escapeHtml(order.floor)}', '${escapeHtml(order.row_label)}')">鎖定</button>`;
+        function lockButtonHtml(order, changeKey) {
+            let currentLock = "active";
+            if (adminUnsavedChanges[changeKey]?.order_status !== undefined) {
+                currentLock = adminUnsavedChanges[changeKey].order_status;
+            } else {
+                currentLock = order.order_status;
             }
-            return `<button class="pill-btn cyan" type="button" onclick="toggleLock('${escapeHtml(order.order_id)}', '${escapeHtml(order.floor)}', '${escapeHtml(order.row_label)}')">開放刪除</button>`;
-        }
 
-        function paymentButtonHtml(order) {
-            if (order.payment_done) {
-                return `<button class="pill-btn green" type="button" onclick="togglePayment('${escapeHtml(order.order_id)}', '${escapeHtml(order.floor)}', '${escapeHtml(order.row_label)}')">已付款</button>`;
+            if (currentLock === "locked") {
+                return `<button class="admin-lock-toggle-btn pill-btn dark" style="height:34px; font-size:13px; min-width:80px; padding:0 10px;" type="button" data-key="${changeKey}">🔒 鎖定</button>`;
             }
-            return `<button class="pill-btn gray" type="button" onclick="togglePayment('${escapeHtml(order.order_id)}', '${escapeHtml(order.floor)}', '${escapeHtml(order.row_label)}')">未付款</button>`;
-        }
-
-        function pickupButtonHtml(order) {
-            if (order.picked_up) {
-                return `<button class="pill-btn blue" type="button" onclick="advancePickup('${escapeHtml(order.order_id)}', '${escapeHtml(order.floor)}', '${escapeHtml(order.row_label)}')">已取</button>`;
-            }
-        
-            if (order.pickup_open) {
-                return `<button class="pill-btn green" type="button" onclick="advancePickup('${escapeHtml(order.order_id)}', '${escapeHtml(order.floor)}', '${escapeHtml(order.row_label)}')">已開放</button>`;
-            }
-        
-            if (order.ticket_adjusted) {
-                return `<button class="pill-btn cyan" type="button" onclick="advancePickup('${escapeHtml(order.order_id)}', '${escapeHtml(order.floor)}', '${escapeHtml(order.row_label)}')">已調票</button>`;
-            }
-        
-            return `<button class="pill-btn gray" type="button" onclick="toggleTicketAdjusted('${escapeHtml(order.order_id)}', '${escapeHtml(order.floor)}', '${escapeHtml(order.row_label)}')">未開放</button>`;
+            return `<button class="admin-lock-toggle-btn pill-btn cyan" style="height:34px; font-size:13px; min-width:80px; padding:0 10px;" type="button" data-key="${changeKey}">🔓 開放</button>`;
         }
 
         function renderAdminOrders(orders) {
@@ -280,35 +280,17 @@
             const unpickedCountEl = document.getElementById("admin-unpicked-count");
 
             if (!orders.length) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="11" class="empty-state">查無資料</td>
-                    </tr>
-                `;
+                tbody.innerHTML = `<tr><td colspan="11" class="empty-state">查無資料</td></tr>`;
                 summaryGrid?.classList.add("hidden");
                 return;
             }
 
-            let paidAmount = 0;
-            let unpaidAmount = 0;
-            let pickedCount = 0;
-            let unpickedCount = 0;
-
+            let paidAmount = 0; let unpaidAmount = 0; let pickedCount = 0; let unpickedCount = 0;
             orders.forEach(order => {
                 const ticketVolume = Array.isArray(order.seats) ? order.seats.length : 0; 
                 const orderPrice = Number(order.price || 0); 
-
-                if (order.payment_done) {
-                    paidAmount += orderPrice;
-                } else {
-                    unpaidAmount += orderPrice;
-                }
-
-                if (order.picked_up) {
-                    pickedCount += ticketVolume;
-                } else {
-                    unpickedCount += ticketVolume;
-                }
+                if (order.payment_done) { paidAmount += orderPrice; } else { unpaidAmount += orderPrice; }
+                if (order.picked_up) { pickedCount += ticketVolume; } else { unpickedCount += ticketVolume; }
             });
 
             if (paidAmountEl) paidAmountEl.textContent = `$${paidAmount.toLocaleString()}`;
@@ -316,292 +298,386 @@
             if (pickedCountEl) pickedCountEl.textContent = pickedCount;
             if (unpickedCountEl) unpickedCountEl.textContent = unpickedCount;
 
-            if (currentKeyword && currentKeyword.original !== "") {
-                summaryGrid?.classList.remove("hidden");
+            summaryGrid?.classList.toggle("hidden", !currentKeyword);
+
+            const pickupColorMap = { "未調票": "gray", "已調票": "cyan", "開放取票": "green", "已取票": "blue" };
+            const paymentColorMap = { "未付": "gray", "已付 [現金]": "blue", "已付 [轉帳]": "green" };
+
+            tbody.innerHTML = orders.map(order => {
+                const changeKey = `${order.order_id}_${order.floor}_${order.row_label}`;
+                
+                let currentPickup = "未調票";
+                if (adminUnsavedChanges[changeKey]?.pickup_status !== undefined) {
+                    currentPickup = adminUnsavedChanges[changeKey].pickup_status;
+                } else if (order.picked_up) {
+                    currentPickup = "已取票";
+                } else if (order.pickup_open) {
+                    currentPickup = "開放取票";
+                } else if (order.ticket_adjusted) {
+                    currentPickup = "已調票";
+                }
+
+                let currentPayment = "未付";
+                if (adminUnsavedChanges[changeKey]?.payment_status !== undefined) {
+                    currentPayment = adminUnsavedChanges[changeKey].payment_status;
+                } else if (order.payment_done) {
+                    currentPayment = "已付 [現金]"; 
+                }
+
+                return `
+                    <tr>
+                        <td class="info-text" style="font-size:13px;">${escapeHtml(order.datetime)}</td>
+                        <td class="info-text" style="font-size:13px;">${escapeHtml(order.order_id)}</td>
+                        <td class="info-text" style="font-weight:bold;">${escapeHtml(order.name)}</td>
+                        <td class="info-text">${escapeHtml(order.floor)}${escapeHtml(order.row_label)}排</td>
+                        <td class="info-text seats-cell">${order.seats.map(seat => `${seat}`).join("、")}</td>
+                        <td class="info-text" style="font-weight:bold; color:var(--admin-main);">$${order.price}</td>
+                        <td>
+                            <input id="admin-note-${escapeHtml(order.order_id)}" class="note-input" type="text" value="${escapeHtml(order.note || "")}" placeholder="點擊填寫備註..." style="height:36px; border-radius:10px; width:100%;" onblur="updateSingleNote('${escapeHtml(order.order_id)}', '${escapeHtml(order.floor)}', '${escapeHtml(order.row_label)}', this.value)" />
+                        </td>
+                        <td><div class="cell-center">${lockButtonHtml(order, changeKey)}</div></td>
+                        
+                        <!-- 取票狀態選單 -->
+                        <td>
+                            <div class="cell-center">
+                                <select class="pickup-status-select pill-btn ${pickupColorMap[currentPickup] || 'gray'}" data-key="${changeKey}" style="width:120px; height:36px; border-radius:10px; font-size:13px; text-align-last:center; cursor:pointer; border:1px solid #ddd;">
+                                    <option value="未調票" ${currentPickup === '未調票' ? 'selected' : ''}>未調票</option>
+                                    <option value="已調票" ${currentPickup === '已調票' ? 'selected' : ''}>已調票</option>
+                                    <option value="開放取票" ${currentPickup === '開放取票' ? 'selected' : ''}>開放取票</option>
+                                    <option value="已取票" ${currentPickup === '已取票' ? 'selected' : ''}>已取票</option>
+                                </select>
+                            </div>
+                        </td>
+
+                        <!-- 付款狀態選單 -->
+                        <td>
+                            <div class="cell-center">
+                                <select class="payment-status-select pill-btn ${paymentColorMap[currentPayment] || 'gray'}" data-key="${changeKey}" style="width:120px; height:36px; border-radius:10px; font-size:13px; text-align-last:center; cursor:pointer; border:1px solid #ddd;">
+                                    <option value="未付" ${currentPayment === '未付' ? 'selected' : ''}>未付</option>
+                                    <option value="已付 [現金]" ${currentPayment === '已付 [現金]' ? 'selected' : ''}>已付 [現金]</option>
+                                    <option value="已付 [轉帳]" ${currentPayment === '已付 [轉帳]' ? 'selected' : ''}>已付 [轉帳]</option>
+                                </select>
+                            </div>
+                        </td>
+
+                        <td class="info-text" style="font-size:13px; color:#666;">${escapeHtml(order.ot_order_id || "無")}</td>
+                    </tr>
+                `;
+            }).join("");
+
+            // 重新綁定事件監聽
+            document.querySelectorAll(".pickup-status-select").forEach(selectEl => {
+                selectEl.addEventListener("change", (e) => {
+                    const nextVal = e.target.value;
+                    const key = selectEl.getAttribute("data-key");
+                    selectEl.className = `pickup-status-select pill-btn ${pickupColorMap[nextVal] || 'gray'}`;
+                    
+                    if(!adminUnsavedChanges[key]) adminUnsavedChanges[key] = {};
+                    adminUnsavedChanges[key].pickup_status = nextVal;
+                    
+                    const trEl = selectEl.closest("tr");
+                    const paySel = trEl.querySelector(".payment-status-select");
+                    adminUnsavedChanges[key].payment_status = paySel.value;
+                    updateAdminUnsavedBadge();
+                });
+            });
+
+            document.querySelectorAll(".payment-status-select").forEach(selectEl => {
+                selectEl.addEventListener("change", (e) => {
+                    const nextVal = e.target.value;
+                    const key = selectEl.getAttribute("data-key");
+                    selectEl.className = `payment-status-select pill-btn ${paymentColorMap[nextVal] || 'gray'}`;
+                    
+                    if(!adminUnsavedChanges[key]) adminUnsavedChanges[key] = {};
+                    adminUnsavedChanges[key].payment_status = nextVal;
+
+                    const trEl = selectEl.closest("tr");
+                    const pickSel = trEl.querySelector(".pickup-status-select");
+                    adminUnsavedChanges[key].pickup_status = pickSel.value;
+                    updateAdminUnsavedBadge();
+                });
+            });
+
+            document.querySelectorAll(".admin-lock-toggle-btn").forEach(btnEl => {
+                btnEl.addEventListener("click", (e) => {
+                    const key = btnEl.getAttribute("data-key");
+                    if (!adminUnsavedChanges[key]) adminUnsavedChanges[key] = {};
+                    
+                    const trEl = btnEl.closest("tr");
+                    const pickSel = trEl.querySelector(".pickup-status-select");
+                    const paySel = trEl.querySelector(".payment-status-select");
+                    
+                    const isCurrentlyLocked = btnEl.classList.contains("dark");
+                    const nextLockStatus = isCurrentlyLocked ? "active" : "locked";
+                    
+                    if (nextLockStatus === "locked") {
+                        btnEl.className = "admin-lock-toggle-btn pill-btn dark";
+                        btnEl.textContent = "🔒 鎖定";
+                    } else {
+                        btnEl.className = "admin-lock-toggle-btn pill-btn cyan";
+                        btnEl.textContent = "🔓 開放";
+                    }
+                    
+                    adminUnsavedChanges[key].order_status = nextLockStatus;
+                    adminUnsavedChanges[key].pickup_status = pickSel.value;
+                    adminUnsavedChanges[key].payment_status = paySel.value;
+                    
+                    updateAdminUnsavedBadge();
+                });
+            });
+        }
+
+        function updateAdminUnsavedBadge() {
+            const badge = document.getElementById("admin-unsaved-badge");
+            const count = Object.keys(adminUnsavedChanges).length;
+            if (badge) {
+                if (count > 0) { badge.style.display = "inline-flex"; badge.textContent = count; } 
+                else { badge.style.display = "none"; }
+            }
+        }
+
+        // 一鍵批次儲存變更
+        document.getElementById("admin-save-changes-btn").addEventListener("click", async () => {
+            const changeKeys = Object.keys(adminUnsavedChanges);
+            if (changeKeys.length === 0) { alert("目前沒有任何狀態被修改，不需要儲存功能。"); return; }
+
+            const updates = changeKeys.map(key => {
+                const parts = key.split("_");
+                return { 
+                    order_id: parts[0], floor: parts[1], row_label: parts[2], 
+                    pickup_status: adminUnsavedChanges[key].pickup_status,
+                    payment_status: adminUnsavedChanges[key].payment_status,
+                    order_status: adminUnsavedChanges[key].order_status
+                };
+            });
+
+            const btn = document.getElementById("admin-save-changes-btn");
+            btn.textContent = "正在同步中..."; btn.disabled = true;
+
+            const res = await fetch(`/api/admin/orders/batch-update-workflow?mode=${encodeURIComponent(currentConcert)}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ updates })
+            });
+            const data = await res.json();
+
+            btn.textContent = "💾 儲存後台變更"; btn.disabled = false;
+
+            if (res.ok && data.success) {
+                alert(data.message);
+                adminUnsavedChanges = {};
+                updateAdminUnsavedBadge();
+                await searchAdminOrders();
+                await loadDailyFinanceData(financeDateSelect.value);
             } else {
-                summaryGrid?.classList.add("hidden");
+                alert(`儲存失敗：${data.message}`);
+            }
+        });
+
+        // Finance
+        let currentFinanceDetails = []; 
+
+        async function loadDailyFinanceData(chosenDate = null) {
+            const fDateSelect = document.getElementById("finance-date-select");
+            if (!fDateSelect) return;
+            
+            const filterInput = document.getElementById("finance-filter-input");
+            if (filterInput && !chosenDate) filterInput.value = "";
+            
+            if (!currentConcert) {
+                fDateSelect.innerHTML = '<option value="">請先選擇場次</option>';
+                const cashEl = document.getElementById("finance-cash-sum");
+                const bankEl = document.getElementById("finance-bank-sum");
+                const grandEl = document.getElementById("finance-grand-sum");
+                const countEl = document.getElementById("finance-count");
+                if (cashEl) cashEl.textContent = "$0";
+                if (bankEl) bankEl.textContent = "$0";
+                if (grandEl) grandEl.textContent = "$0";
+                if (countEl) countEl.textContent = "0";
+                
+                const fTbody = document.getElementById("finance-tbody");
+                if (fTbody) fTbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="padding:16px;">請先選擇台北場或高雄場以讀取財務資料。</td></tr>`;
+                return;
+            }
+            
+            const params = new URLSearchParams();
+            params.set("mode", currentConcert);
+            if (chosenDate && typeof chosenDate === "string" && chosenDate.trim() !== "") {
+                params.set("date", chosenDate.trim());
+            }
+            
+            try {
+                const res = await fetch(`/api/admin/orders/daily-finance?${params.toString()}`);
+                const data = await res.json();
+                
+                if (!res.ok || !data.success) {
+                    fDateSelect.innerHTML = '<option value="">讀取財務失敗</option>';
+                    return;
+                }
+                
+                const currentSelected = data.target_date;
+                fDateSelect.innerHTML = "";
+                
+                if (!data.available_dates || data.available_dates.length === 0) {
+                    fDateSelect.innerHTML = '<option value="">暫無對帳歷史</option>';
+                } else {
+                    data.available_dates.forEach(d => {
+                        const opt = document.createElement("option"); opt.value = d; opt.textContent = d;
+                        if (d === currentSelected) opt.selected = true;
+                        fDateSelect.appendChild(opt);
+                    });
+                }
+                
+                currentFinanceDetails = data.details || [];
+                renderFinanceTable(filterInput ? filterInput.value.trim() : "");
+                
+            } catch (err) { 
+                console.error("財務明細載入出錯:", err); 
+                fDateSelect.innerHTML = '<option value="">連線發生錯誤</option>';
+            }
+        }
+
+        function renderFinanceTable(filterKeyword = "") {
+            const fTbody = document.getElementById("finance-tbody");
+            if (!fTbody) return;
+
+            const target = filterKeyword.toLowerCase().trim();
+
+            const filteredData = currentFinanceDetails.filter(item => {
+                if (!target) return true;
+                return item.name.toLowerCase().includes(target) || 
+                       item.mode.toLowerCase().includes(target);
+            });
+
+            let filteredCash = 0;
+            let filteredBank = 0;
+            filteredData.forEach(item => {
+                if (item.mode === "現金") filteredCash += item.price;
+                else if (item.mode === "轉帳") filteredBank += item.price;
+            });
+
+            const cashSumEl = document.getElementById("finance-cash-sum");
+            const bankSumEl = document.getElementById("finance-bank-sum");
+            const grandSumEl = document.getElementById("finance-grand-sum");
+            const countEl = document.getElementById("finance-count");
+
+            if (cashSumEl) cashSumEl.textContent = `$${filteredCash.toLocaleString()}`;
+            if (bankSumEl) bankSumEl.textContent = `$${filteredBank.toLocaleString()}`;
+            if (grandSumEl) grandSumEl.textContent = `$${(filteredCash + filteredBank).toLocaleString()}`;
+            if (countEl) countEl.textContent = filteredData.length;
+
+            if (filteredData.length === 0) {
+                fTbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="padding:16px;">沒有符合篩選條件「${escapeHtml(filterKeyword)}」的帳務明細。</td></tr>`;
+                return;
             }
 
-            tbody.innerHTML = orders.map(order => `
-                <tr>
-                    <td class="info-text">${escapeHtml(order.datetime)}</td>
-                    <td class="info-text">${escapeHtml(order.order_id)}</td>
-                    <td class="info-text">${escapeHtml(order.name)}</td>
-                    <td class="info-text">${escapeHtml(order.floor)}${escapeHtml(order.row_label)}排</td>
-                    <td class="info-text seats-cell">${order.seats.map(seat => `${seat}`).join("、")}</td>
-                    <td class="info-text">$${order.price}</td>
-                    <td>
-                        <input
-                            id="admin-note-${escapeHtml(order.order_id)}"
-                            class="note-input"
-                            type="text"
-                            value="${escapeHtml(order.note || "")}"
-                            placeholder="備註"
-                        />
-                    </td>
-                    <td><div class="cell-center">${lockButtonHtml(order)}</div></td>
-                    <td><div class="cell-center">${paymentButtonHtml(order)}</div></td>
-                    <td><div class="cell-center">${pickupButtonHtml(order)}</div></td>
-                    <td class="info-text">${escapeHtml(order.ot_order_id || "")}</td>
-                </tr>
-            `).join("");
+            fTbody.innerHTML = filteredData.map(item => {
+                const modePillClass = item.mode === "現金" ? "pill-btn blue" : "pill-btn green";
+                return `
+                    <tr>
+                        <td style="font-size:13px; padding:10px;">${escapeHtml(item.time)}</td>
+                        <td style="font-weight:bold; padding:10px;">${escapeHtml(item.name)}</td>
+                        <td style="padding:10px;"><span class="${modePillClass}" style="height:26px; font-size:12px; padding:0 8px; min-width:60px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px;">${escapeHtml(item.mode)}</span></td>
+                        <td style="font-weight:bold; color:var(--admin-main); padding:10px;">$${item.price}</td>
+                        <td style="font-size:13px; padding:10px; text-align:left !important;">${escapeHtml(item.seat)}</td>
+                        <td style="font-size:12px; color:#666; padding:10px;">${escapeHtml(item.order_id)}</td>
+                        <td style="font-size:13px; color:#555; padding:10px; text-align:left !important;">${escapeHtml(item.note || "-")}</td>
+                    </tr>
+                `;
+            }).join("");
         }
+
+        document.getElementById("finance-filter-input").addEventListener("input", (e) => {
+            renderFinanceTable(e.target.value);
+        });
+
+        financeDateSelect.addEventListener("change", (e) => { 
+            loadDailyFinanceData(e.target.value); 
+        });
 
         async function searchAdminOrders() {
             if (!authed) return;
             if (!requireConcertSelected()) return;
-        
             const input = document.getElementById("admin-keyword-input");
-            const keyword = input.value.trim();
-        
-            currentKeyword = keyword;
-        
+            const keyword = input.value.trim(); currentKeyword = keyword;
             const params = new URLSearchParams();
             params.set("mode", currentConcert);
-            if (keyword) {
-                params.set("keyword", keyword);
-            }
-        
+            if (keyword) params.set("keyword", keyword);
             const res = await fetch(`/api/admin/orders?${params.toString()}`);
             const data = await res.json();
-        
-            if (!res.ok || !data.success) {
-                alert(data.message || "查詢失敗");
-                return;
-            }
-        
+            if (!res.ok || !data.success) { alert(data.message || "查詢失敗"); return; }
             renderAdminOrders(data.orders || []);
         }
 
         async function toggleLock(orderId, floor, rowLabel) {
             if (!authed) return;
-        
-            const url =
-                `/api/admin/orders/${encodeURIComponent(orderId)}/lock` +
-                `?mode=${encodeURIComponent(currentConcert)}` +
-                `&floor=${encodeURIComponent(floor)}` +
-                `&row_label=${encodeURIComponent(rowLabel)}`;
-        
-            const res = await fetch(url, {
-                method: "PATCH"
-            });
-        
-            const data = await res.json();
-        
-            if (!res.ok || !data.success) {
-                alert(data.message || "更新失敗");
-                return;
-            }
-        
-            searchAdminOrders();
-        }
-        
-        async function togglePayment(orderId, floor, rowLabel) {
-            if (!authed) return;
-        
-            const url =
-                `/api/admin/orders/${encodeURIComponent(orderId)}/payment` +
-                `?mode=${encodeURIComponent(currentConcert)}` +
-                `&floor=${encodeURIComponent(floor)}` +
-                `&row_label=${encodeURIComponent(rowLabel)}`;
-        
-            const res = await fetch(url, {
-                method: "PATCH"
-            });
-        
-            const data = await res.json();
-        
-            if (!res.ok || !data.success) {
-                alert(data.message || "更新失敗");
-                return;
-            }
-        
-            searchAdminOrders();
-        }
-        
-        async function advancePickup(orderId, floor, rowLabel) {
-            if (!authed) return;
-        
-            const url =
-                `/api/admin/orders/${encodeURIComponent(orderId)}/pickup/advance` +
-                `?mode=${encodeURIComponent(currentConcert)}` +
-                `&floor=${encodeURIComponent(floor)}` +
-                `&row_label=${encodeURIComponent(rowLabel)}`;
-        
-            const res = await fetch(url, {
-                method: "PATCH"
-            });
-        
-            const data = await res.json();
-        
-            if (!res.ok || !data.success) {
-                alert(data.message || "更新失敗");
-                return;
-            }
-        
-            searchAdminOrders();
-        }
-        
-        async function toggleTicketAdjusted(orderId, floor, rowLabel) {
-            if (!authed) return;
-        
-            const url =
-                `/api/admin/orders/${encodeURIComponent(orderId)}/ticket-adjusted` +
-                `?mode=${encodeURIComponent(currentConcert)}` +
-                `&floor=${encodeURIComponent(floor)}` +
-                `&row_label=${encodeURIComponent(rowLabel)}`;
-        
-            const res = await fetch(url, {
-                method: "PATCH"
-            });
-        
-            const data = await res.json();
-        
-            if (!res.ok || !data.success) {
-                alert(data.message || "更新失敗");
-                return;
-            }
-        
-            searchAdminOrders();
-        }
-        
-        async function deleteOrder(orderId, floor, rowLabel) {
-            if (!authed) return;
-        
-            const ok = confirm("確定要刪除這排座位嗎？");
-            if (!ok) return;
-        
-            const url =
-                `/api/admin/orders/${encodeURIComponent(orderId)}` +
-                `?mode=${encodeURIComponent(currentConcert)}` +
-                `&floor=${encodeURIComponent(floor)}` +
-                `&row_label=${encodeURIComponent(rowLabel)}`;
-        
-            const res = await fetch(url, {
-                method: "DELETE"
-            });
-        
-            const data = await res.json();
-        
-            if (!res.ok || !data.success) {
-                alert(data.message || "刪除失敗");
-                return;
-            }
-        
-            searchAdminOrders();
+            const url = `/api/admin/orders/${encodeURIComponent(orderId)}/lock?mode=${encodeURIComponent(currentConcert)}&floor=${encodeURIComponent(floor)}&row_label=${encodeURIComponent(rowLabel)}`;
+            const res = await fetch(url, { method: "PATCH" });
+            if (res.ok) searchAdminOrders();
         }
 
         document.getElementById("admin-search-btn").addEventListener("click", searchAdminOrders);
-        document.getElementById("admin-keyword-input").addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                searchAdminOrders();
-            }
-        });
+        document.getElementById("admin-keyword-input").addEventListener("keydown", (e) => { if (e.key === "Enter") searchAdminOrders(); });
     
         function setAdminEmptyState(message) {
             const tbody = document.getElementById("admin-orders-tbody");
-            if (!tbody) return;
-
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="11" class="empty-state">${escapeHtml(message)}</td>
-                </tr>
-            `;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="11" class="empty-state">${escapeHtml(message)}</td></tr>`;
         }
 
         async function selectConcert(concertCode) {
             if (!authed) return;
-
             currentConcert = concertCode;
             sessionStorage.setItem("admin_concert", concertCode);
-
+            
             document.querySelectorAll(".concert-select-btn").forEach(btn => {
                 btn.classList.toggle("active", btn.dataset.concert === concertCode);
             });
-
+            
             const workArea = document.getElementById("admin-work-area");
-            const label = concertLabels[concertCode] || concertCode;
-            document.getElementById("admin-current-concert").textContent = `目前場次：${label}`;
+            document.getElementById("admin-current-concert").textContent = `目前場次：${concertLabels[concertCode]}`;
             workArea?.classList.remove("hidden");
-
-            const input = document.getElementById("admin-keyword-input");
-            if (input) input.value = currentKeyword || "";
-
-            setAdminEmptyState(`${label}資料載入中...`);
+            
+            setAdminEmptyState(`${concertLabels[concertCode]}資料載入中...`);
+            
             await loadOrderOpenStatus();
             await searchAdminOrders();
-            document.getElementById("admin-summary-grid")?.classList.add("hidden");
+            await loadDailyFinanceData(null); 
         }
 
         document.querySelectorAll(".concert-select-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                selectConcert(btn.dataset.concert);
-            });
+            btn.addEventListener("click", () => { selectConcert(btn.dataset.concert); });
         });
 
         window.onload = async () => {
             const ok = await requirePassword();
             if (!ok) return;
-
             setAdminEmptyState("請先選擇台北場或高雄場");
-
+            await loadDailyFinanceData("");
             const savedConcert = sessionStorage.getItem("admin_concert");
-            if (savedConcert === "tp" || savedConcert === "kh") {
-                selectConcert(savedConcert);
-            }
+            if (savedConcert === "tp" || savedConcert === "kh") selectConcert(savedConcert);
         };
 
         const toggleBtn = document.getElementById("order-open-toggle-btn");
-        
         async function loadOrderOpenStatus() {
-            if (!currentConcert) {
-                toggleBtn.textContent = "請先選擇場次";
-                toggleBtn.className = "order-open-btn";
-                return;
-            }
-        
+            if (!currentConcert) return;
             const res = await fetch(`/api/${currentConcert}/seats`);
             const data = await res.json();
-        
             renderOrderOpenButton(data.order_open);
         }
         
         function renderOrderOpenButton(isOpen) {
-        
             const label = concertLabels[currentConcert] || "目前場次";
-
-            toggleBtn.textContent = isOpen
-                ? `${label}購票開放中｜點擊關閉`
-                : `${label}購票已關閉｜點擊開放`;
-        
-            toggleBtn.className = isOpen
-                ? "order-open-btn is-open"
-                : "order-open-btn is-closed";
+            toggleBtn.textContent = isOpen ? `${label}購票開放中｜點擊關閉` : `${label}購票已關閉｜點擊開放`;
+            toggleBtn.className = isOpen ? "order-open-btn is-open" : "order-open-btn is-closed";
         }
         
         toggleBtn.addEventListener("click", async () => {
-        
-            const ok = confirm("確定要切換購票開放狀態嗎？");
-        
-            if (!ok) return;
-        
+            if (!confirm("確定要切換購票開放狀態嗎？")) return;
             if (!requireConcertSelected()) return;
-
-            const res = await fetch(`/api/admin/toggle-order-open?mode=${encodeURIComponent(currentConcert)}`, {
-                method: "POST"
-            });
-        
+            const res = await fetch(`/api/admin/toggle-order-open?mode=${encodeURIComponent(currentConcert)}`, { method: "POST" });
             const data = await res.json();
-        
-            if (!data.success) {
-                alert(data.message || "切換失敗");
-                return;
-            }
-        
-            renderOrderOpenButton(data.order_open);
+            if (data.success) renderOrderOpenButton(data.order_open);
         });
-        
     </script>
-    
 </body>
 </html>

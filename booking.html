@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>《嶋聲》團內購票調票系統</title>
+    <link rel="icon" type="image/png" href="/NTUCO.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/orders.css">
+    <style>
+        .upload-zone {
+            border: 2px dashed var(--orders-accent);
+            border-radius: 20px;
+            padding: 14px 24px; 
+            background: rgba(255, 255, 255, 0.6);
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+            
+            display: flex; 
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap; 
+        }
+        .upload-zone:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: var(--orders-main);
+        }
+        .file-input-label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 38px; 
+            padding: 0 20px;
+            background: var(--orders-accent);
+            color: white;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            margin: 0;
+        }
+        .file-input-label:hover {
+            background: var(--orders-accent-hover);
+        }
+        #csv-file { display: none; }
+        .batch-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body class="orders-page">
+
+    <main class="orders-shell">
+
+        <header class="orders-hero">
+            <div class="orders-title-wrap">
+                <h1>《嶋聲》團內購票調票管理系統</h1>
+                <p class="orders-hero-subtitle">上傳 OPENTIX 匯出之調票 CSV，自動比對座位、購買者姓名並同步登錄至系統</p>
+            </div>
+            <a href="/" class="back-link-btn">回到首頁</a>
+        </header>
+
+        <!-- 上傳區 -->
+        <div class="upload-zone">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 20px; margin-top: -2px;">📤</span>
+                <h4 style="margin: 0; color: #2f3c39; font-size: 15px; font-weight: 800;">OPENTIX 調票 CSV 上傳</h4>
+                <div id="file-name-display" style="font-size: 13px; font-weight: bold; color: var(--orders-main); background: rgba(127,159,152,0.12); padding: 4px 10px; border-radius: 8px; display: none;"></div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <div class="batch-input-wrap">
+                    <label for="batch-count" style="font-weight: 800; color: #4a5652; font-size: 14px;">調票批次：</label>
+                    <input id="batch-count" class="orders-search-input" type="number" min="1" placeholder="例如：1" style="width: 180px; height: 38px; border-radius: 12px; padding: 0 10px; margin:0; text-align: center;" />
+                </div>
+
+                <label class="file-input-label">
+                    瀏覽檔案並匯入
+                    <input type="file" id="csv-file" accept=".csv" />
+                </label>
+            </div>
+        </div>
+
+        <!-- Filter -->
+        <div style="background: rgba(255,255,255,0.7); padding: 20px 24px; border-radius: 22px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
+            
+            <!-- 場次切換與儲存按鈕 -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <div class="orders-mode-tabs" style="margin: 0;">
+                    <button class="orders-mode-tab active" type="button" data-filter-concert="all">全部場次</button>
+                    <button class="orders-mode-tab" type="button" data-filter-concert="tp">台北場 (中山堂)</button>
+                    <button class="orders-mode-tab" type="button" data-filter-concert="kh">高雄場 (衛武營)</button>
+                </div>
+
+                <button id="save-all-changes-btn" class="save-btn" type="button" style="height: 38px; border-radius: 12px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(127,159,152,0.3); margin: 0;">
+                    💾 儲存所有變更 <span id="unsaved-badge" style="background:#d64545; color:white; border-radius:50%; width:18px; height:18px; font-size:11px; display:none; align-items:center; justify-content:center; font-weight:900;">0</span>
+                </button>
+            </div>
+
+            <div style="height: 1px; background: linear-gradient(90deg, rgba(95,124,121,0.02), rgba(95,124,121,0.15), rgba(95,124,121,0.02)); margin: 2px 0;"></div>
+
+            <!-- 精細條件過濾 -->
+            <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; font-size: 14px; color: #4a5652;">
+                
+                <!-- 購買者 -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 800;">🔍 購買者：</span>
+                    <input id="filter-name" class="orders-search-input" type="text" placeholder="輸入姓名過濾" style="width: 140px; height: 36px; border-radius: 10px; padding: 0 10px; margin:0; font-size: 13px;" />
+                </div>
+
+                <!-- 訂單號碼 -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 800;">🎟️ 訂單號碼：</span>
+                    <input id="filter-order-no" class="orders-search-input" type="text" placeholder="輸入訂單號碼 (可不打後綴)" style="width: 220px; height: 36px; border-radius: 10px; padding: 0 10px; margin:0; font-size: 13px;" />
+                </div>
+                
+                <!-- 調票批次 -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 800;">📦 調票批次：</span>
+                    <select id="filter-batch" class="orders-search-input" style="width: 140px; height: 36px; border-radius: 10px; padding: 0 8px; margin:0; font-size: 13px; border: 2px solid #d8d8d8; background:#fff; outline:none;">
+                        <option value="all">全部批次</option>
+                    </select>
+                </div>
+
+                <!-- 篩選目前情況 -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 800;">📍 情況狀態：</span>
+                    <select id="filter-status" class="orders-search-input" style="width: 120px; height: 36px; border-radius: 10px; padding: 0 8px; margin:0; font-size: 13px; border: 2px solid #d8d8d8; background:#fff; outline:none;">
+                        <option value="all">全部情況</option>
+                        <option value="已調">已調</option>
+                        <option value="已傳">已傳</option>
+                        <option value="已取">已取</option>
+                        <option value="已分好">已分好</option>
+                    </select>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 目前渲染訂單筆數 -->
+        <div style="margin: 0 4px 10px; font-size: 14px; font-weight: 800; color: var(--orders-main); display: flex; align-items: center; gap: 6px;">
+            📊 目前畫面顯示筆數：<span id="filtered-count-badge" style="background: var(--orders-main); color: white; padding: 2px 8px; border-radius: 8px; font-size: 13px;">0</span> 筆
+        </div>
+        
+        <!-- 匯入預覽與結果紀錄表格 -->
+        <div class="orders-table-card">
+            <div class="orders-table-scroll">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th id="sort-order-no-btn" style="width: 180px; cursor: pointer; user-select: none;" title="點擊切換排序：A-Z / Z-A">訂單號碼 <span id="sort-icon">↕️</span></th>
+                            <th style="width: 160px;">座位</th>
+                            <th style="width: 160px;">訂單日期</th>
+                            <th style="width: 200px;">地點</th>
+                            <th style="width: 50px;">售價</th>
+                            <th style="width: 100px;">購買者（點擊修改）</th>
+                            <th style="width: 150px;">情況 (點Alt/Option可單獨修改)</th>
+                            <th style="width: 110px;">調票批次</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booking-tbody">
+                        <tr class="empty-row">
+                            <td colspan="8">
+                                <div class="empty-state">尚未上傳任何調票資料。上傳成功後，處理結果將顯示於此。</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="page-footer">
+        © 2026 NTUCO All Rights Reserved.
+    </footer>
+
+    <div id="orders-loading-overlay" class="orders-loading-overlay hidden">
+        <div class="orders-loading-card">
+            <div class="orders-loading-spinner"></div>
+            <div id="orders-loading-text">正在讀取 CSV 並跨工作表比對、回填中，請勿關閉視窗...</div>
+        </div>
+    </div>
+
+    <script src="/booking.js"></script>
+</body>
+</html>

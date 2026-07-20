@@ -1,5 +1,8 @@
 import os
 import time
+import io
+import csv
+import re
 from functools import wraps
 from threading import Lock
 
@@ -34,6 +37,7 @@ from lib.sheet_repo import (
     get_orders_by_name,
     get_section_members_rows,
     get_stats_config_rows,
+    get_spreadsheet,
     mark_consignment_paid_and_picked_up,
     mark_consignment_sent_to_front,
     mark_order_deleted,
@@ -1562,7 +1566,459 @@ def api_stats():
         "data": build_stats_summary(concert_code=mode),
     })
 
+# ============================================================
+# 1. 派發調票網頁路由
+# ============================================================
+@app.route("/booking")
+def booking_page():
+    if not session.get("admin_ok"):
+        return "<script>alert('你不是票務！'); window.location.href='/';</script>", 401
+    return send_from_directory(PROJECT_ROOT, "booking.html")
 
+
+# ============================================================
+# 2. 處理調票 CSV 萃取、跨表比對、回填與寫入 booking 工作表 API
+# ============================================================
+@app.route("/api/admin/booking/import", methods=["POST"])
+@require_admin
+def api_admin_import_booking():
+    try:
+        batch_count = request.form.get("batch_count", "").strip()
+        if not batch_count:
+            return jsonify({"success": False, "message": "請先填寫這是第幾次調票！"}), 400
+            
+        if "file" not in request.files:
+            return jsonify({"success": False, "message": "未偵測到上傳檔案"}), 400
+            
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"success": False, "message": "未選取檔案"}), 400
+
+        # 解析 CSV 檔案資料
+        file_bytes = file.read()
+        try:
+            csv_text = file_bytes.decode("utf-8-sig") 
+        except UnicodeDecodeError:
+            csv_text = file_bytes.decode("cp950", errors="ignore")
+            
+        csv_file = io.StringIO(csv_text)
+        reader = csv.DictReader(csv_file)
+        
+        reader.fieldnames = [f.strip().replace("\ufeff", "") if f else "" for f in reader.fieldnames]
+        
+        # OPENTIX 欄位名稱對照字典
+        field_map = {
+            "order_no": next((f for f in reader.fieldnames if "訂單號碼" in f), "訂單號碼"),
+            "seat_raw": next((f for f in reader.fieldnames if "座位" in f), "座位"),
+            "order_date": next((f for f in reader.fieldnames if "訂單日期" in f), "訂單日期"),
+            "location": next((f for f in reader.fieldnames if "地點" in f), "地點"),
+            "price": next((f for f in reader.fieldnames if "售價" in f), "售價"),
+        }
+        
+        # 初始化 Google Sheet 連線
+        spreadsheet = get_spreadsheet()
+        tp_ws = spreadsheet.worksheet("2026Summer_Taipei")
+        kh_ws = spreadsheet.worksheet("2026Summer_Kaohsiung")
+        booking_ws = spreadsheet.worksheet("booking")
+        
+        tp_rows = tp_ws.get_all_values()
+        kh_rows = kh_ws.get_all_values()
+        
+        #排數欄位改為 ([0-9A-Za-z]+) 完美兼容 A2排, B14排 等英文編號排數
+        seat_pattern = re.compile(r"^(.*?)\s*-\s*([0-9A-Za-z]+)排\s*-\s*([0-9]+)號")
+
+        def build_seat_map(sheet_values):
+            mapping = {}
+            if len(sheet_values) < 2:
+                return mapping
+            headers = [h.strip() for h in sheet_values[0]]
+            
+            try:
+                idx_floor = headers.index("樓層")
+                idx_row = headers.index("排數")
+                idx_seat = headers.index("座位")
+                idx_name = headers.index("名字")
+            except ValueError:
+                idx_floor, idx_row, idx_seat, idx_name = 4, 5, 6, 3 
+                
+            for r_idx, row in enumerate(sheet_values[1:], start=2):
+                if len(row) <= max(idx_floor, idx_row, idx_seat, idx_name):
+                    continue
+                f_val = str(row[idx_floor]).strip()
+                r_val = str(row[idx_row]).strip()
+                s_val = str(row[idx_seat]).strip()
+                n_val = str(row[idx_name]).strip()
+                
+                mapping[(f_val, r_val, s_val)] = {
+                    "row_num": r_idx,
+                    "buyer_name": n_val
+                }
+            return mapping
+
+        tp_seat_map = build_seat_map(tp_rows)
+        kh_seat_map = build_seat_map(kh_rows)
+
+        booking_entries = []
+        tp_updates = []
+        kh_updates = []
+
+        for row in reader:
+            order_no = row.get(field_map["order_no"], "").strip()
+            seat_raw = row.get(field_map["seat_raw"], "").strip()
+            order_date = row.get(field_map["order_date"], "").strip()
+            location = row.get(field_map["location"], "").strip()
+            price = row.get(field_map["price"], "").strip()
+            
+            if not order_no or not seat_raw:
+                continue
+                
+            buyer_name = ""  
+            target_map = None
+            update_list = None
+            
+            if "衛武營" in location:
+                target_map = kh_seat_map
+                update_list = kh_updates
+            elif "中山堂" in location:
+                target_map = tp_seat_map
+                update_list = tp_updates
+                
+            # 解析座位字串
+            match = seat_pattern.search(seat_raw)
+            if match and target_map is not None:
+                raw_floor = match.group(1).strip() # 例如 "2樓7號門"
+                parsed_row = str(match.group(2)).strip() # 💡 直接取字串 "A2"，不再轉 int，完美保留英文字母
+                parsed_seat = str(int(match.group(3))) # 座位號碼轉 int 去除前導 0 轉回字串 "17"
+                
+                # 模糊比對樓層、排數與座位
+                matched_seat_info = None
+                for (f_k, r_k, s_k), info in target_map.items():
+                    # 比對排數 (r_k == parsed_row) 與 座位 (s_k == parsed_seat)
+                    # 並且透過包含關係比對樓層（例如 "2樓" 是否包含在 "2樓7號門" 中）
+                    if r_k == parsed_row and s_k == parsed_seat and (f_k in raw_floor or raw_floor in f_k):
+                        matched_seat_info = info
+                        break
+                
+                if matched_seat_info:
+                    buyer_name = matched_seat_info["buyer_name"]
+                    target_row_num = matched_seat_info["row_num"]
+                    
+                    update_list.append({
+                        'range': f'O{target_row_num}',
+                        'values': [[order_no]]
+                    })
+            
+            booking_entries.append([
+                order_no,                  
+                seat_raw,                  
+                order_date,                
+                location,                  
+                int(price) if price.isdigit() else price,  
+                buyer_name,                
+                "已調",                    
+                f"第{batch_count}次調票"    
+            ])
+
+        if booking_entries:
+            booking_ws.append_rows(booking_entries, value_input_option="USER_ENTERED")
+        if tp_updates:
+            tp_ws.batch_update(tp_updates, value_input_option="USER_ENTERED")
+        if kh_updates:
+            kh_ws.batch_update(kh_updates, value_input_option="USER_ENTERED")
+
+        return jsonify({
+            "success": True, 
+            "message": f"成功匯入 {len(booking_entries)} 筆調票資料！已同步串聯名字比對與回填 O 欄。",
+            "data": booking_entries
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "message": f"匯入失敗，錯誤原因：{str(e)}"}), 500
+
+# ============================================================
+# 3. 終極升級版：批次同步更新 booking 工作表中的「情況」與「購買者姓名」
+# ============================================================
+@app.route("/api/admin/booking/batch-update-status", methods=["PATCH"])
+@require_admin
+def api_admin_booking_batch_update_status():
+    global _booking_cache, _booking_cache_time
+    try:
+        data = request.get_json(silent=True) or {}
+        updates = data.get("updates", []) # [{order_no, seat_raw, status, buyer_name}, ...]
+        
+        if not updates:
+            return jsonify({"success": True, "message": "沒有偵測到任何變更項目"}), 200
+            
+        spreadsheet = get_spreadsheet()
+        booking_ws = spreadsheet.worksheet("booking")
+        booking_rows = booking_ws.get_all_values()
+        
+        if len(booking_rows) < 2:
+            return jsonify({"success": False, "message": "工作表無資料，無法更新"}), 404
+            
+        row_map = {}
+        for idx, row in enumerate(booking_rows[1:], start=2):
+            if len(row) >= 2:
+                row_map[(row[0].strip(), row[1].strip())] = idx
+                
+        gspread_updates = []
+        success_count = 0
+        
+        for item in updates:
+            order_no = item.get("order_no", "").strip()
+            seat_raw = item.get("seat_raw", "").strip()
+            new_status = item.get("status", "").strip()
+            new_buyer_name = item.get("buyer_name", "").strip() 
+            
+            key = (order_no, seat_raw)
+            if key in row_map:
+                row_idx = row_map[key]
+        
+                gspread_updates.append({
+                    'range': f'F{row_idx}:G{row_idx}',
+                    'values': [[new_buyer_name, new_status]]
+                })
+                success_count += 1
+                
+        if gspread_updates:
+            booking_ws.batch_update(gspread_updates, value_input_option="USER_ENTERED")
+            
+        _booking_cache = None
+        _booking_cache_time = 0
+            
+        return jsonify({
+            "success": True, 
+            "message": f"成功將 {success_count} 筆資料儲存至 Google Sheet 中！"
+        })
+        
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+# ============================================================
+# 4. 取得歷史調票紀錄 API
+# ============================================================
+@app.route("/api/admin/booking/records", methods=["GET"])
+def api_admin_get_booking_records():
+    try:
+        spreadsheet = get_spreadsheet()
+        booking_ws = spreadsheet.worksheet("booking")
+        booking_rows = booking_ws.get_all_values()
+        
+        if len(booking_rows) < 2:
+            return jsonify({"success": True, "data": []})
+            
+        # 排除第一行的表頭，並將其餘資料倒序排列（讓最新調票的紀錄顯示在最上面）
+        history_data = booking_rows[1:]
+        history_data.reverse() 
+        
+        return jsonify({
+            "success": True,
+            "data": history_data
+        })
+    except Exception as e:
+        return jsonify({"success": False, "message": f"無法載入歷史紀錄：{str(e)}"}), 500
+# ============================================================
+# 5. 【完全體修復版】補上 defaultdict 匯入，完美支援單筆訂單內有多張座位的更新
+# ============================================================
+@app.route("/api/admin/orders/batch-update-workflow", methods=["PATCH"])
+@require_admin
+def api_admin_orders_batch_update_workflow():
+    try:
+        mode = normalize_mode(request.args.get("mode", "tp"))
+        if mode == "all":
+            mode = "tp"
+            
+        data = request.get_json(silent=True) or {}
+        updates = data.get("updates", []) # [{order_id, floor, row_label, pickup_status, payment_status, order_status}, ...]
+        
+        if not updates:
+            return jsonify({"success": True, "message": "沒有偵測到任何變更項目"}), 200
+            
+        # 💡 修正點：匯入 collections 模組中的 defaultdict，徹底解決未定義錯誤
+        from collections import defaultdict
+        from lib.sheet_repo import get_worksheet, get_header_col_map
+        ws = get_worksheet(mode)
+        
+        all_values = ws.get_all_values()
+        col_map = get_header_col_map(ws)
+        
+        # 收集所有符合的 row_num
+        row_matching_map = defaultdict(list)
+        for r_idx in range(2, len(all_values) + 1):
+            row = all_values[r_idx - 1]
+            c_order_id = normalize_text(row[1] if len(row) > 1 else "")
+            c_floor = normalize_text(row[4] if len(row) > 4 else "")
+            c_row_label = normalize_text(row[5] if len(row) > 5 else "")
+            
+            key = (c_order_id, c_floor, c_row_label)
+            row_matching_map[key].append(r_idx)
+
+        gspread_updates = []
+        dt_now = now_str()
+
+        for item in updates:
+            order_id = item.get("order_id", "").strip()
+            floor = item.get("floor", "").strip()
+            row_label = item.get("row_label", "").strip()
+            p_status = item.get("pickup_status", "").strip()    # 未調票 / 已調票 / 開放取票 / 已取票
+            m_status = item.get("payment_status", "").strip()   # 未付 / 已付 [現金] / 已付 [轉帳]
+            o_status = item.get("order_status")                 # locked / active
+            
+            key = (order_id, floor, row_label)
+            
+            if key in row_matching_map:
+                for row_num in row_matching_map[key]:
+                    orig_row = all_values[row_num - 1]
+                    orig_status = normalize_text(orig_row[2] if len(orig_row) > 2 else "").lower()
+                    
+                    val_open = "FALSE"
+                    val_picked = "FALSE"
+                    val_payment = "FALSE"
+                    val_adjusted = "FALSE"
+                    
+                    val_p_time = ""
+                    val_q_mode = ""
+                    val_r_time = ""
+
+                    # 鎖定狀態
+                    val_order_status = o_status if o_status is not None else orig_status
+
+                    # 付款大底
+                    if m_status != "未付":
+                        val_payment = "TRUE"
+                        val_open = "TRUE"
+                        val_adjusted = "TRUE" 
+                        
+                        if m_status == "已付 [現金]":
+                            val_p_time = dt_now
+                            val_q_mode = "cash"
+                        elif m_status == "已付 [轉帳]":
+                            val_p_time = dt_now
+                            val_q_mode = "bank"
+
+                    # 取票狀態疊加
+                    if p_status == "已調票":
+                        val_adjusted = "TRUE"
+                    elif p_status == "開放取票":
+                        val_open = "TRUE"
+                    elif p_status == "已取票":
+                        val_open = "TRUE"
+                        val_picked = "TRUE"
+                        val_r_time = dt_now
+
+                    # 為該列追加更新任務
+                    gspread_updates.append({'range': f'C{row_num}', 'values': [[val_order_status]]})
+                    gspread_updates.append({'range': f'J{row_num}', 'values': [[val_open]]})
+                    gspread_updates.append({'range': f'K{row_num}', 'values': [[val_picked]]})
+                    gspread_updates.append({'range': f'L{row_num}', 'values': [[val_payment]]})
+                    gspread_updates.append({'range': f'M{row_num}', 'values': [[val_adjusted]]})
+                    gspread_updates.append({'range': f'P{row_num}:R{row_num}', 'values': [[val_p_time, val_q_mode, val_r_time]]})
+
+        if gspread_updates:
+            ws.batch_update(gspread_updates, value_input_option="USER_ENTERED")
+            
+        from lib.sheet_repo import clear_caches
+        clear_caches(mode)
+        
+        return jsonify({"success": True, "message": "取票與付款狀態（含多座位關聯與P,Q,R時間）已整批成功儲存！"})
+        
+    except Exception as e:
+        return jsonify({"success": False, "message": f"批次更新失敗：{str(e)}"}), 500
+
+# ============================================================
+# 6. 修正版：每日帳務對帳明細 API（改用 get_worksheet）
+# ============================================================
+@app.route("/api/admin/orders/daily-finance", methods=["GET"])
+@require_admin
+def api_admin_daily_finance():
+    try:
+        mode = normalize_mode(request.args.get("mode", "tp"))
+        if mode == "all":
+            mode = "tp"
+            
+        target_date = request.args.get("date", "").strip() # 格式例如 "2026/07/20"
+        
+        # 💡 修正點：改為呼叫 sheet_repo 內建的 get_worksheet，拔除未定義的 WORKSHEET_NAMES
+        from lib.sheet_repo import get_worksheet, get_header_col_map
+        ws = get_worksheet(mode)
+        
+        all_values = ws.get_all_values()
+        col_map = get_header_col_map(ws)
+        
+        # 抓取必要欄位索引
+        idx_order_id = 1
+        idx_name = 3
+        idx_floor = 4
+        idx_row = 5
+        idx_seat = 6
+        idx_price = 7
+        idx_note = 8
+        
+        idx_p_time = 15 # Column P (payment_time)
+        idx_q_mode = 16 # Column Q (payment_mode)
+        
+        # 1. 收集所有有記帳的「不重複日期」供前端選單使用
+        available_dates = set()
+        for row in all_values[1:]:
+            if len(row) > idx_p_time and row[idx_p_time]:
+                date_part = row[idx_p_time].split(" ")[0]
+                available_dates.add(date_part)
+                
+        sorted_dates = sorted(list(available_dates), reverse=True) # 最新日期排最前
+        
+        if not target_date and sorted_dates:
+            target_date = sorted_dates[0]
+            
+        # 2. 開始撈取目標日期的對帳明細並計算總額
+        finance_details = []
+        cash_total = 0
+        bank_total = 0
+        
+        if target_date:
+            for row in all_values[1:]:
+                if len(row) > idx_q_mode and row[idx_p_time]:
+                    p_time_val = row[idx_p_time]
+                    if p_time_val.startswith(target_date):
+                        q_mode_val = row[idx_q_mode].strip().lower() # cash / bank
+                        price_val = int(float(row[idx_price])) if row[idx_price] else 0
+                        
+                        if q_mode_val == "cash":
+                            cash_total += price_val
+                            mode_text = "現金"
+                        elif q_mode_val == "bank":
+                            bank_total += price_val
+                            mode_text = "轉帳"
+                        else:
+                            mode_text = "未知"
+                            
+                        finance_details.append({
+                            "time": p_time_val.split(" ")[1] if " " in p_time_val else p_time_val,
+                            "order_id": row[idx_order_id],
+                            "name": row[idx_name],
+                            "seat": f"{row[idx_floor]}{row[idx_row]}排{row[idx_seat]}號",
+                            "price": price_val,
+                            "mode": mode_text,
+                            "note": row[idx_note] if len(row) > idx_note else ""
+                        })
+                        
+        finance_details.sort(key=lambda x: x["time"], reverse=True)
+        
+        return jsonify({
+            "success": True,
+            "target_date": target_date,
+            "available_dates": sorted_dates,
+            "summary": {
+                "cash_total": cash_total,
+                "bank_total": bank_total,
+                "grand_total": cash_total + bank_total,
+                "count": len(finance_details)
+            },
+            "details": finance_details
+        })
+        
+    except Exception as e:
+        return jsonify({"success": False, "message": f"讀取每日帳務失敗：{str(e)}"}), 500
+    
 # ============================================================
 # Static File Fallback
 # Keep this at the very bottom.
@@ -1571,3 +2027,4 @@ def api_stats():
 @app.route("/<path:filename>")
 def serve_static_file(filename):
     return send_from_directory(PROJECT_ROOT, filename)
+
