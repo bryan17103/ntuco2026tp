@@ -1127,6 +1127,9 @@ def build_stats_summary(concert_code="tp"):
     rows = get_all_records(concert_code)
     member_to_section = load_section_members(concert_code)
     stats_config = load_stats_config(concert_code)
+
+    # 💡 1. 新增要排除特例計算的人名與聲部設定
+    EXCLUDED_NAMES = {"無帳 退", "無帳 送", "現場售票"}
     EXCLUDED_RANKING_SECTIONS = {"特殊來源"}
     EXCLUDED_REWARD_SECTIONS = {"特殊來源", "未分類"}
 
@@ -1165,6 +1168,10 @@ def build_stats_summary(concert_code="tp"):
         if seat is None:
             continue
 
+        # 💡 2. 關鍵過濾：只要名字是「無帳 退」、「無帳 送」、「現場售票」，直接跳過不納入任何大統計、金額、張數與積分！
+        if name in EXCLUDED_NAMES:
+            continue
+
         total_tickets += 1
         total_amount += price
 
@@ -1190,7 +1197,7 @@ def build_stats_summary(concert_code="tp"):
         member_info = member_to_section.get(name, {
             "section": "未分類",
             "manual_points": 0,
-            "manual_tickets": 0,  # 預設 0
+            "manual_tickets": 0,
         })
 
         section = member_info.get("section", "未分類")
@@ -1200,6 +1207,10 @@ def build_stats_summary(concert_code="tp"):
             section_members[section][name] += 1
 
     for name, info in member_to_section.items():
+        # 💡 3. 同樣在聲部名單/手動加分處確保這三個人名被排除
+        if name in EXCLUDED_NAMES:
+            continue
+
         manual_tickets = int(info.get("manual_tickets", 0) or 0)
         manual_points = float(info.get("manual_points", 0.0) or 0.0)
         section = info.get("section", "未分類")
@@ -1210,13 +1221,9 @@ def build_stats_summary(concert_code="tp"):
 
         # 2. 累加手動推票張數
         if manual_tickets > 0:
-            # 加到大統計總推票數
             total_tickets += manual_tickets
-            
-            # 加到個人的推票張數排行
             person_ticket_count[name] += manual_tickets
             
-            # 加到聲部的總張數以及成員明細
             if section not in EXCLUDED_REWARD_SECTIONS:
                 section_ticket_count[section] += manual_tickets
                 section_members[section][name] += manual_tickets
@@ -1230,8 +1237,8 @@ def build_stats_summary(concert_code="tp"):
                 "points": person_points[name],
             }
             for name, count in person_ticket_count.items()
-            if member_to_section.get(name, {}).get("section", "未分類")
-            not in EXCLUDED_RANKING_SECTIONS
+            if member_to_section.get(name, {}).get("section", "未分類") not in EXCLUDED_RANKING_SECTIONS
+            and name not in EXCLUDED_NAMES  # 💡 4. 確保不進入排行榜
         ],
         key=lambda x: (x["tickets"], x["points"]),
         reverse=True
@@ -1250,6 +1257,7 @@ def build_stats_summary(concert_code="tp"):
                     "points": person_points[n],
                 }
                 for n, c in members.items()
+                if n not in EXCLUDED_NAMES  # 💡 5. 確保不進入聲部明細
             ],
             key=lambda x: (x["tickets"], x["points"]),
             reverse=True
@@ -1272,7 +1280,7 @@ def build_stats_summary(concert_code="tp"):
             name = item["name"]
             section = item.get("section", "未分類")
 
-            if section in EXCLUDED_REWARD_SECTIONS:
+            if section in EXCLUDED_REWARD_SECTIONS or name in EXCLUDED_NAMES:
                 continue
 
             if name in assigned_names:

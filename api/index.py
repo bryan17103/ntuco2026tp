@@ -2020,6 +2020,171 @@ def api_admin_daily_finance():
         return jsonify({"success": False, "message": f"讀取每日帳務失敗：{str(e)}"}), 500
     
 # ============================================================
+# 7. 【升級版】匯出折抵金額清單 (含下載時間與精細排序)
+# ============================================================
+@app.route("/api/admin/export-discount-list", methods=["GET"])
+@require_admin
+def api_admin_export_discount_list():
+    try:
+        import io
+        import csv
+        from datetime import datetime
+        from collections import defaultdict
+        from flask import make_response
+        from lib.sheet_repo import (
+            get_config_worksheet,
+            load_section_members,
+            get_all_records,
+            group_order_rows,
+            calc_points_from_orders,
+            calc_discount_amount,
+            normalize_name,
+            normalize_identity,
+            parse_manual_points_string,
+            now_str,
+            TAIPEI_TZ,
+        )
+
+        # 1. 取得當前時間與格式化時間字串
+        dt_now = datetime.now(TAIPEI_TZ)
+        time_str_display = dt_now.strftime("%Y/%m/%d %H:%M:%S")
+        time_str_file = dt_now.strftime("%Y%m%d_%H%M")
+
+        # 2. 取得所有的聲部成員
+        member_map = load_section_members("tp")
+        
+        # 3. 抓取台北場與高雄場的所有有效訂單
+        tp_records = get_all_records("tp")
+        kh_records = get_all_records("kh")
+
+        # 4. 按姓名歸接所有人的訂單
+        tp_orders_by_name = defaultdict(list)
+        for order in group_order_rows(tp_records):
+            tp_orders_by_name[normalize_name(order["name"])].append(order)
+
+        kh_orders_by_name = defaultdict(list)
+        for order in group_order_rows(kh_records):
+            kh_orders_by_name[normalize_name(order["name"])].append(order)
+
+        # 收集所有人名
+        all_names = set(member_map.keys()) | set(tp_orders_by_name.keys()) | set(kh_orders_by_name.keys())
+
+        ws_members = get_config_worksheet("section_members")
+        member_rows = ws_members.get_all_records(expected_headers=["姓名", "聲部", "手動加分_TP", "手動加分_KH", "身份"])
+
+        discount_list = []
+
+        for name in all_names:
+            if not name:
+                continue
+
+            info = member_map.get(name, {
+                "section": "未分類",
+                "identity_code": "5",
+                "identity": "暫時未分類",
+                "manual_tickets": 0,
+                "manual_points": 0.0,
+            })
+
+            section = info.get("section") or "未分類"
+            identity_code = str(info.get("identity_code") or "5").strip()
+            identity_text = normalize_identity(identity_code)
+
+            # 計算台北與高雄訂單基礎劃位積分
+            tp_orders = tp_orders_by_name.get(name, [])
+            kh_orders = kh_orders_by_name.get(name, [])
+            
+            base_pts_tp = calc_points_from_orders(tp_orders)
+            base_pts_kh = calc_points_from_orders(kh_orders)
+
+            # 讀取手動加分
+            manual_pts_tp = 0.0
+            manual_pts_kh = 0.0
+            
+            for m_row in member_rows:
+                if normalize_name(m_row.get("姓名")) == name:
+                    _, manual_pts_tp = parse_manual_points_string(m_row.get("手動加分_TP"))
+                    _, manual_pts_kh = parse_manual_points_string(m_row.get("手動加分_KH"))
+                    break
+
+            total_pts_tp = base_pts_tp + manual_pts_tp
+            total_pts_kh = base_pts_kh + manual_pts_kh
+            grand_total_pts = total_pts_tp + total_pts_kh
+
+            # 計算應有的折抵金額
+            discount_amount = calc_discount_amount(grand_total_pts, identity_code)
+
+            discount_list.append({
+                "section": section,
+                "name": name,
+                "identity_code": identity_code,
+                "identity": identity_text,
+                "tp_order_pts": base_pts_tp,
+                "tp_manual_pts": manual_pts_tp,
+                "tp_total_pts": total_pts_tp,
+                "kh_order_pts": base_pts_kh,
+                "kh_manual_pts": manual_pts_kh,
+                "kh_total_pts": total_pts_kh,
+                "grand_total_pts": grand_total_pts,
+                "discount_amount": discount_amount
+            })
+
+        # 💡 指定多重排序優先順序：
+        # 1. 聲部順序：吹管 -> 彈撥 -> 拉弦 -> 低音 -> 打擊 -> 指揮 -> 未分類
+        section_order = {"吹管": 1, "彈撥": 2, "拉弦": 3, "低音": 4, "打擊": 5, "指揮": 6, "未分類": 99, "特殊來源": 999}
+        
+        # 2. 身份順序：學生協奏(3) -> 團長群(4) -> 團員(1) -> 協演/工人(2) -> 未分類(5)
+        identity_order = {"3": 1, "4": 2, "1": 3, "2": 4, "5": 99}
+
+        discount_list.sort(key=lambda x: (
+            section_order.get(x["section"], 90),
+            identity_order.get(x["identity_code"], 90),
+            x["name"]
+        ))
+
+        # 生成 CSV 內容
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # 💡 寫入匯出時間資訊列
+        writer.writerow([f"《嶋聲》團內購票折抵金額清單 - 匯出時間：{time_str_display}"])
+        writer.writerow([]) # 空白行隔開
+
+        # 寫入正式欄位表頭
+        writer.writerow([
+            "聲部", "姓名", "身份類別", 
+            "台北場劃位積分", "台北場手動加分", "台北場總積分",
+            "高雄場劃位積分", "高雄場手動加分", "高雄場總積分",
+            "兩場累積總積分", "可折抵金額(元)"
+        ])
+
+        for item in discount_list:
+            writer.writerow([
+                item["section"],
+                item["name"],
+                item["identity"],
+                item["tp_order_pts"],
+                item["tp_manual_pts"],
+                item["tp_total_pts"],
+                item["kh_order_pts"],
+                item["kh_manual_pts"],
+                item["kh_total_pts"],
+                item["grand_total_pts"],
+                item["discount_amount"]
+            ])
+
+        # 加上 UTF-8-SIG (BOM) 防止 Excel 打開中文變成亂碼
+        csv_data = "\ufeff" + output.getvalue()
+        
+        response = make_response(csv_data)
+        response.headers["Content-Disposition"] = f"attachment; filename=discount_summary_{time_str_file}.csv"
+        response.headers["Content-Type"] = "text/csv; charset=utf-8-sig"
+        return response
+
+    except Exception as e:
+        return jsonify({"success": False, "message": f"匯出折抵清單失敗：{str(e)}"}), 500
+    
+# ============================================================
 # Static File Fallback
 # Keep this at the very bottom.
 # ============================================================

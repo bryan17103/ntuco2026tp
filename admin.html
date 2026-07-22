@@ -62,9 +62,18 @@
                     <input id="admin-keyword-input" class="admin-search-input" type="text" placeholder="輸入姓名或訂單ID..." style="height: 38px; border-radius: 12px;" />
                     <button id="admin-search-btn" class="admin-search-btn" type="button" style="height: 38px; border-radius: 12px; line-height: 1; padding: 0 20px;">查詢</button>
                 </div>
-                <button id="admin-save-changes-btn" class="pill-btn orange" type="button" style="height: 38px; border-radius: 12px; display: inline-flex; align-items: center; gap: 6px; min-width: auto; padding: 0 16px; margin: 0; box-shadow: 0 4px 12px rgba(127,159,152,0.3);">
-                    💾 儲存後台變更 <span id="admin-unsaved-badge" style="background:#d64545; color:white; border-radius:50%; width:18px; height:18px; font-size:11px; display:none; align-items:center; justify-content:center; font-weight:900;">0</span>
-                </button>
+
+                <!-- 💡 新增：右側按鈕群 -->
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <!-- 💡 匯出折抵金額清單按鈕 -->
+                    <button id="admin-export-discount-btn" class="pill-btn green" type="button" style="height: 38px; border-radius: 12px; display: inline-flex; align-items: center; gap: 6px; min-width: auto; padding: 0 16px; margin: 0; cursor: pointer;">
+                        📊 匯出折抵清單
+                    </button>
+
+                    <button id="admin-save-changes-btn" class="pill-btn orange" type="button" style="height: 38px; border-radius: 12px; display: inline-flex; align-items: center; gap: 6px; min-width: auto; padding: 0 16px; margin: 0; box-shadow: 0 4px 12px rgba(127,159,152,0.3);">
+                        💾 儲存後台變更 <span id="admin-unsaved-badge" style="background:#d64545; color:white; border-radius:50%; width:18px; height:18px; font-size:11px; display:none; align-items:center; justify-content:center; font-weight:900;">0</span>
+                    </button>
+                </div>
             </div>
 
             <!-- 金額與票數統計小卡 -->
@@ -646,6 +655,12 @@
 
         document.querySelectorAll(".concert-select-btn").forEach(btn => {
             btn.addEventListener("click", () => { selectConcert(btn.dataset.concert); });
+        });
+
+        // 💡 點擊觸發匯出折抵金額清單 CSV (Excel) 檔案下載
+        document.getElementById("admin-export-discount-btn").addEventListener("click", () => {
+            if (!authed) return;
+            window.location.href = "/api/admin/export-discount-list";
         });
 
         window.onload = async () => {
