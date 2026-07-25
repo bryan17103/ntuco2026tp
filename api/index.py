@@ -443,23 +443,34 @@ def api_orders():
 
     result = get_orders_by_name(name, concert_code=mode)
 
-    # 💡 ⚡ 新增：預先在後端算出該使用者達成的獎勵清單，避免前端二次 fetch 造成 delay
+    # 💡 ⚡ 累積制獎勵判定：凡是「總積分 >= 門檻」的獎勵一律解鎖！
     unlocked_rewards = []
     try:
-        from lib.sheet_repo import build_stats_summary_all
-        all_stats = build_stats_summary_all()
-        all_rewards = all_stats.get("rewards", [])
-        target_name = normalize_name(name)
+        from lib.sheet_repo import load_stats_config
+        stats_config = load_stats_config("tp")
+        all_rewards = stats_config.get("rewards", []) # 包含 [{"reward": "公演USB", "threshold": 20}, ...]
+        all_total_points = float(result.get("all_total_points", 0))
 
         for rule in all_rewards:
             reward_name = rule.get("reward", "")
-            names = rule.get("names", [])
-            # 檢查名字是否在合規名單中
-            if target_name in [normalize_name(n) for n in names]:
+            threshold = float(rule.get("threshold", 0))
+
+            # 只要總積分達到門檻，即解鎖該獎勵
+            if threshold > 0 and all_total_points >= threshold:
                 unlocked_rewards.append({
                     "name": reward_name,
-                    "requirement": rule.get("requirement", ""),
+                    "requirement": f"{threshold:g} 分",
+                    "threshold": threshold
                 })
+
+        # 防呆小貼心：如果已經達成「免費慶功宴」(40分)，自動替換掉「7折慶功宴」(30分) 避免重複顯示
+        has_free_party = any("免費慶功宴" in r["name"] for r in unlocked_rewards)
+        if has_free_party:
+            unlocked_rewards = [r for r in unlocked_rewards if "7折慶功宴" not in r["name"]]
+
+        # 按分數門檻由高到低排序顯示
+        unlocked_rewards.sort(key=lambda x: x["threshold"], reverse=True)
+
     except Exception as e:
         print(f"計算解鎖獎勵失敗: {e}")
 
@@ -472,7 +483,7 @@ def api_orders():
         "identity": result.get("identity", "暫時未分類，請耐心等待"),
         "all_total_points": result.get("all_total_points", 0),
         "discount_amount": result.get("discount_amount", 0),
-        "unlocked_rewards": unlocked_rewards  # 💡 直接回傳已解鎖的獎勵
+        "unlocked_rewards": unlocked_rewards  
     }
 
     _query_cache[cache_key] = response_data
