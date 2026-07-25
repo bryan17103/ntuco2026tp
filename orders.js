@@ -7,6 +7,33 @@ let currentRewardStats = {};
 
 const SECOND_FLOOR_START_ROW = 33;
 
+// 💡 獎勵說明對照表
+const REWARD_GUIDELINES = {
+    "慶功宴": "關於慶功宴之獎勵待慶功宴場地確定後會正式公告。",
+    "公演USB": "領取此獎勵者請待樂隊部長於大薰風發布 USB 表單後填寫表單，未在期限內填寫表單者將無法取得此獎勵 😭",
+    "文宣品": "領取此獎勵者請在加練期間主動找到票務領取，高雄場總彩結束後將無法取得此獎勵！（或開學後的迎新茶會）"
+};
+
+function cleanEmoji(text) {
+    return String(text ?? "")
+        .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
+        .trim();
+}
+
+function getRewardGuidelineText(rewardName) {
+    for (const key in REWARD_GUIDELINES) {
+        if (rewardName.includes(key)) return REWARD_GUIDELINES[key];
+    }
+    return "詳細領取方式請洽票務或關注團內公告。";
+}
+
+function getRewardIcon(rewardName) {
+    if (rewardName.includes("慶功宴")) return "🍷";
+    if (rewardName.includes("公演USB")) return "💾";
+    if (rewardName.includes("文宣品")) return "🎁";
+    return "✨";
+}
+
 function escapeHtml(text) {
     return String(text ?? "")
         .replaceAll("&", "&amp;")
@@ -268,6 +295,7 @@ function renderOrdersTable(orders) {
         `;
     }).join("");
 }
+
 async function searchOrders() {
     const input = document.getElementById("order-name-input");
     const name = input.value.trim();
@@ -292,7 +320,7 @@ async function searchOrders() {
 
         try {
             data = JSON.parse(raw);
-        console.log("discount_amount =", data.discount_amount);     
+            console.log("discount_amount =", data.discount_amount);     
         } catch {
             console.log(raw);
             alert(`查詢回傳不是 JSON：${res.status}`);
@@ -314,6 +342,7 @@ async function searchOrders() {
             discount_amount: Number(data.discount_amount || 0),
             identity_code: String(data.identity_code || "5"),
             identity: data.identity || "請先查詢姓名",
+            unlocked_rewards: data.unlocked_rewards || []
         };
 
         renderOrdersTable(orders);
@@ -344,9 +373,9 @@ async function searchOrders() {
 
     } finally {
         hideOrdersLoading();
+        showRewardCongratModalFast();
     }
 }
-
 
 async function saveNote(orderId, floor, rowLabel, mode = currentConcertMode) {
     const input = document.getElementById(`note-${orderId}-${floor}-${rowLabel}`);
@@ -853,9 +882,11 @@ function setupBasicEvents() {
             closeStatsHelpModal();
             closeMySeatMapModal();
             closeOrdersHelpModal();
+            closeRewardCongratModal();
         }
     });
 }
+
 function updateSeatMapLegendByMode() {
     const dot500 = document.getElementById("legend-500-dot");
     if (!dot500) return;
@@ -878,6 +909,7 @@ function ownedSeatClass(priceZone) {
 
     return `my-seat-${priceZone}`;
 }
+
 function enableMySeatMapZoom() {
     const viewport = document.getElementById("my-seat-map-viewport");
     const map = document.getElementById("my-seat-map");
@@ -978,8 +1010,72 @@ function enableMySeatMapZoom() {
     };
 }
 
+// =========================================================
+// 💡 ⚡ 推票獎勵祝賀 Modal（0 延遲完整補齊版）
+// =========================================================
+
+function showRewardCongratModalFast() {
+    if (!currentSearchName) return;
+
+    const unlocked = currentRewardStats.unlocked_rewards || [];
+    const allTotalPts = currentRewardStats.all_total_points || 0;
+
+    if (unlocked.length === 0) return;
+
+    const myUnlockedRewards = unlocked.map(item => ({
+        name: item.name,
+        requirement: item.requirement,
+        desc: getRewardGuidelineText(item.name),
+        icon: getRewardIcon(item.name)
+    }));
+
+    renderRewardCongratModal(allTotalPts, myUnlockedRewards);
+}
+// 3. 渲染 Modal HTML 內容
+function renderRewardCongratModal(allTotalPts, rewards) {
+    const modal = document.getElementById("reward-congrat-modal");
+    const ptsEl = document.getElementById("reward-modal-points");
+    const itemsContainer = document.getElementById("reward-modal-items");
+
+    if (!modal || !itemsContainer) return;
+
+    if (ptsEl) ptsEl.textContent = formatNumber(allTotalPts);
+
+    itemsContainer.innerHTML = rewards.map(item => `
+        <div class="reward-item-card">
+            <div class="reward-item-icon">${item.icon}</div>
+            <div>
+                <div class="reward-item-title">${escapeHtml(cleanEmoji(item.name))} <span style="font-size:12px; color:#888; font-weight:normal;">(${escapeHtml(item.requirement)})</span></div>
+                <div class="reward-item-desc">${escapeHtml(item.desc)}</div>
+            </div>
+        </div>
+    `).join("");
+
+    modal.classList.remove("hidden");
+}
+
+function closeRewardCongratModal() {
+    const modal = document.getElementById("reward-congrat-modal");
+    modal?.classList.add("hidden");
+}
+
+function setupRewardCongratEvents() {
+    const modal = document.getElementById("reward-congrat-modal");
+    const closeBtn = document.getElementById("reward-congrat-close");
+    const confirmBtn = document.getElementById("reward-congrat-confirm-btn");
+
+    closeBtn?.addEventListener("click", closeRewardCongratModal);
+    confirmBtn?.addEventListener("click", closeRewardCongratModal);
+
+    modal?.addEventListener("click", (e) => {
+        if (e.target === modal) closeRewardCongratModal();
+    });
+}
+
+// 初始化綁定與設定
 setupModeTabs();
 setupBasicEvents();
+setupRewardCongratEvents();
 
 updateSeatMapButtonByMode();
 updateStatsDisplayByMode();

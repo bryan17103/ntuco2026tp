@@ -2292,3 +2292,122 @@ table.orders-table {
         font-size: 9px;
     }
 }
+
+/* =========================================================
+   19. Reward Congratulation Modal
+========================================================= */
+
+.reward-congrat-card {
+    width: min(540px, 94vw);
+    max-height: 85vh;
+    overflow-y: auto;
+    text-align: center;
+    padding: 30px 24px 24px;
+    border-radius: 28px;
+}
+
+.reward-congrat-header {
+    margin-bottom: 16px;
+}
+
+.reward-party-icon {
+    font-size: 42px;
+    line-height: 1;
+    margin-bottom: 8px;
+    animation: rewardBounce 0.6s ease;
+}
+
+.reward-congrat-title {
+    margin: 0 0 4px !important;
+    font-family: "Noto Serif TC", serif;
+    font-size: 24px !important;
+    font-weight: 900;
+    color: #2f3c39;
+}
+
+.reward-congrat-subtitle {
+    margin: 0 !important;
+    font-size: 14px;
+    color: #6d8d87;
+    font-weight: 700;
+}
+
+.reward-points-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: linear-gradient(135deg, rgba(127,159,152,0.18), rgba(95,127,130,0.12));
+    border: 1.5px solid rgba(127,159,152,0.32);
+    padding: 8px 18px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+}
+
+.reward-points-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: #4f6f73;
+}
+
+.reward-points-value {
+    font-size: 20px;
+    font-weight: 900;
+    color: #2f3c39;
+}
+
+.reward-points-unit {
+    font-size: 13px;
+    font-weight: 800;
+    color: #4f6f73;
+}
+
+.reward-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+}
+
+.reward-item-card {
+    background: #f8faf9;
+    border: 1.5px solid #e2ebe8;
+    border-radius: 18px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.reward-item-icon {
+    font-size: 26px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(127,159,152,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.reward-item-title {
+    font-size: 16px;
+    font-weight: 900;
+    color: #2f3c39;
+    margin-bottom: 4px;
+}
+
+.reward-item-desc {
+    font-size: 13px;
+    color: #556360;
+    line-height: 1.6;
+    font-weight: 700;
+}
+
+@keyframes rewardBounce {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+}

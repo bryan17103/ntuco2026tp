@@ -443,6 +443,26 @@ def api_orders():
 
     result = get_orders_by_name(name, concert_code=mode)
 
+    # 💡 ⚡ 新增：預先在後端算出該使用者達成的獎勵清單，避免前端二次 fetch 造成 delay
+    unlocked_rewards = []
+    try:
+        from lib.sheet_repo import build_stats_summary_all
+        all_stats = build_stats_summary_all()
+        all_rewards = all_stats.get("rewards", [])
+        target_name = normalize_name(name)
+
+        for rule in all_rewards:
+            reward_name = rule.get("reward", "")
+            names = rule.get("names", [])
+            # 檢查名字是否在合規名單中
+            if target_name in [normalize_name(n) for n in names]:
+                unlocked_rewards.append({
+                    "name": reward_name,
+                    "requirement": rule.get("requirement", ""),
+                })
+    except Exception as e:
+        print(f"計算解鎖獎勵失敗: {e}")
+
     response_data = {
         "success": True,
         "orders": result.get("orders", []),
@@ -452,6 +472,7 @@ def api_orders():
         "identity": result.get("identity", "暫時未分類，請耐心等待"),
         "all_total_points": result.get("all_total_points", 0),
         "discount_amount": result.get("discount_amount", 0),
+        "unlocked_rewards": unlocked_rewards  # 💡 直接回傳已解鎖的獎勵
     }
 
     _query_cache[cache_key] = response_data
