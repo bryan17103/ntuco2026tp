@@ -2294,7 +2294,7 @@ table.orders-table {
 }
 
 /* =========================================================
-   19. Reward Congratulation Modal
+   19. Reward Congratulation Modal (修復手機版標題歪斜)
 ========================================================= */
 
 .reward-congrat-card {
@@ -2317,12 +2317,15 @@ table.orders-table {
     animation: rewardBounce 0.6s ease;
 }
 
-.reward-congrat-title {
+/* 💡 核心修復：強制將右側內邊距歸零，讓標題在手機上完美正居中 */
+.reward-congrat-card .reward-congrat-title {
     margin: 0 0 4px !important;
+    padding-right: 0 !important;
     font-family: "Noto Serif TC", serif;
     font-size: 24px !important;
     font-weight: 900;
     color: #2f3c39;
+    text-align: center !important;
 }
 
 .reward-congrat-subtitle {
@@ -2330,6 +2333,7 @@ table.orders-table {
     font-size: 14px;
     color: #6d8d87;
     font-weight: 700;
+    text-align: center !important;
 }
 
 .reward-points-badge {
