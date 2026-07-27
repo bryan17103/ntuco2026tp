@@ -1797,20 +1797,70 @@ def api_admin_booking_batch_update_status():
         success_count = 0
         
         for item in updates:
-            order_no = item.get("order_no", "").strip()
-            seat_raw = item.get("seat_raw", "").strip()
-            new_status = item.get("status", "").strip()
-            new_buyer_name = item.get("buyer_name", "").strip() 
+            order_id = item.get("order_id", "").strip()
+            floor = item.get("floor", "").strip()
+            row_label = item.get("row_label", "").strip()
+            p_status = item.get("pickup_status", "").strip()    # 未調票 / 已調票 / 開放取票 / 已取票
+            m_status = item.get("payment_status", "").strip()   # 未付 / 已付 [現金] / 已付 [轉帳]
+            o_status = item.get("order_status")                 # locked / active
             
-            key = (order_no, seat_raw)
-            if key in row_map:
-                row_idx = row_map[key]
-        
-                gspread_updates.append({
-                    'range': f'F{row_idx}:G{row_idx}',
-                    'values': [[new_buyer_name, new_status]]
-                })
-                success_count += 1
+            key = (order_id, floor, row_label)
+            
+            if key in row_matching_map:
+                for row_num in row_matching_map[key]:
+                    orig_row = all_values[row_num - 1]
+                    orig_status = normalize_text(orig_row[2] if len(orig_row) > 2 else "").lower()
+                    
+                    # 💡 1. 先讀取目前表格內原本的值，避免未修改的狀態被強制洗掉成 FALSE
+                    val_open = normalize_text(orig_row[9] if len(orig_row) > 9 else "FALSE").upper()      # J 欄
+                    val_picked = normalize_text(orig_row[10] if len(orig_row) > 10 else "FALSE").upper()   # K 欄
+                    val_payment = normalize_text(orig_row[11] if len(orig_row) > 11 else "FALSE").upper()  # L 欄
+                    val_adjusted = normalize_text(orig_row[12] if len(orig_row) > 12 else "FALSE").upper() # M 欄
+                    
+                    val_p_time = orig_row[15] if len(orig_row) > 15 else "" # P 欄
+                    val_q_mode = orig_row[16] if len(orig_row) > 16 else "" # Q 欄
+                    val_r_time = orig_row[17] if len(orig_row) > 17 else "" # R 欄
+
+                    # 鎖定狀態
+                    val_order_status = o_status if o_status is not None else orig_status
+
+                    # 💡 2. 付款狀態更新邏輯
+                    if m_status == "未付":
+                        val_payment = "FALSE"
+                    elif m_status == "已付 [現金]":
+                        val_payment = "TRUE"
+                        val_p_time = dt_now if not val_p_time else val_p_time
+                        val_q_mode = "cash"
+                    elif m_status == "已付 [轉帳]":
+                        val_payment = "TRUE"
+                        val_p_time = dt_now if not val_p_time else val_p_time
+                        val_q_mode = "bank"
+
+                    # 💡 3. 取票狀態更新邏輯 (精準連動 J, K, M 欄與 R 欄時間)
+                    if p_status == "未調票":
+                        val_adjusted = "FALSE"
+                        val_open = "FALSE"
+                        val_picked = "FALSE"
+                    elif p_status == "已調票":
+                        val_adjusted = "TRUE"
+                    elif p_status == "開放取票":
+                        val_adjusted = "TRUE"
+                        val_open = "TRUE"
+                        val_picked = "FALSE"
+                    elif p_status == "已取票":
+                        val_adjusted = "TRUE"
+                        val_open = "TRUE"
+                        val_picked = "TRUE"  # 👈 確保 K 欄寫入 TRUE！
+                        if not val_r_time:   # 若原本沒有時間才寫入當下時間
+                            val_r_time = dt_now
+
+                    # 💡 4. 批次寫入任務
+                    gspread_updates.append({'range': f'C{row_num}', 'values': [[val_order_status]]})
+                    gspread_updates.append({'range': f'J{row_num}', 'values': [[val_open]]})
+                    gspread_updates.append({'range': f'K{row_num}', 'values': [[val_picked]]})   # 是否已取票
+                    gspread_updates.append({'range': f'L{row_num}', 'values': [[val_payment]]})  # 付款狀態
+                    gspread_updates.append({'range': f'M{row_num}', 'values': [[val_adjusted]]}) # 是否已調票
+                    gspread_updates.append({'range': f'P{row_num}:R{row_num}', 'values': [[val_p_time, val_q_mode, val_r_time]]})
                 
         if gspread_updates:
             booking_ws.batch_update(gspread_updates, value_input_option="USER_ENTERED")
@@ -1850,7 +1900,7 @@ def api_admin_get_booking_records():
     except Exception as e:
         return jsonify({"success": False, "message": f"無法載入歷史紀錄：{str(e)}"}), 500
 # ============================================================
-# 5. 【完全體修復版】補上 defaultdict 匯入，完美支援單筆訂單內有多張座位的更新
+# 5. 【完全對齊截圖版】精準對應 J:已調票 / K:開放取票 / L:已取票 / M:付款狀態
 # ============================================================
 @app.route("/api/admin/orders/batch-update-workflow", methods=["PATCH"])
 @require_admin
@@ -1866,13 +1916,11 @@ def api_admin_orders_batch_update_workflow():
         if not updates:
             return jsonify({"success": True, "message": "沒有偵測到任何變更項目"}), 200
             
-        # 💡 修正點：匯入 collections 模組中的 defaultdict，徹底解決未定義錯誤
         from collections import defaultdict
         from lib.sheet_repo import get_worksheet, get_header_col_map
         ws = get_worksheet(mode)
         
         all_values = ws.get_all_values()
-        col_map = get_header_col_map(ws)
         
         # 收集所有符合的 row_num
         row_matching_map = defaultdict(list)
@@ -1903,47 +1951,59 @@ def api_admin_orders_batch_update_workflow():
                     orig_row = all_values[row_num - 1]
                     orig_status = normalize_text(orig_row[2] if len(orig_row) > 2 else "").lower()
                     
-                    val_open = "FALSE"
-                    val_picked = "FALSE"
-                    val_payment = "FALSE"
-                    val_adjusted = "FALSE"
+                    # 💡 對照截圖讀取原始值 (第10欄到第13欄，對應索引 9 到 12)
+                    val_adjusted = normalize_text(orig_row[9] if len(orig_row) > 9 else "FALSE").upper()   # J 欄 (是否已調票)
+                    val_open = normalize_text(orig_row[10] if len(orig_row) > 10 else "FALSE").upper()    # K 欄 (是否開放取票)
+                    val_picked = normalize_text(orig_row[11] if len(orig_row) > 11 else "FALSE").upper()  # L 欄 (是否已取票)
+                    val_payment = normalize_text(orig_row[12] if len(orig_row) > 12 else "FALSE").upper() # M 欄 (付款狀態)
                     
-                    val_p_time = ""
-                    val_q_mode = ""
-                    val_r_time = ""
+                    val_p_time = orig_row[15] if len(orig_row) > 15 else "" # P 欄 (付款時間)
+                    val_q_mode = orig_row[16] if len(orig_row) > 16 else "" # Q 欄 (付款模式)
+                    val_r_time = orig_row[17] if len(orig_row) > 17 else "" # R 欄 (取票時間)
 
                     # 鎖定狀態
                     val_order_status = o_status if o_status is not None else orig_status
 
-                    # 付款大底
-                    if m_status != "未付":
+                    # 💡 1. 處理付款狀態 (連動 M 欄)
+                    if m_status == "未付":
+                        val_payment = "FALSE"
+                    elif m_status == "已付 [現金]":
                         val_payment = "TRUE"
+                        val_adjusted = "TRUE"
                         val_open = "TRUE"
-                        val_adjusted = "TRUE" 
-                        
-                        if m_status == "已付 [現金]":
-                            val_p_time = dt_now
-                            val_q_mode = "cash"
-                        elif m_status == "已付 [轉帳]":
-                            val_p_time = dt_now
-                            val_q_mode = "bank"
+                        val_p_time = val_p_time if val_p_time else dt_now
+                        val_q_mode = "cash"
+                    elif m_status == "已付 [轉帳]":
+                        val_payment = "TRUE"
+                        val_adjusted = "TRUE"
+                        val_open = "TRUE"
+                        val_p_time = val_p_time if val_p_time else dt_now
+                        val_q_mode = "bank"
 
-                    # 取票狀態疊加
-                    if p_status == "已調票":
+                    # 💡 2. 處理取票狀態 (連動 J、K、L 欄)
+                    if p_status == "未調票":
+                        val_adjusted = "FALSE"
+                        val_open = "FALSE"
+                        val_picked = "FALSE"
+                    elif p_status == "已調票":
                         val_adjusted = "TRUE"
                     elif p_status == "開放取票":
+                        val_adjusted = "TRUE"
                         val_open = "TRUE"
+                        val_picked = "FALSE"
                     elif p_status == "已取票":
+                        val_adjusted = "TRUE"
                         val_open = "TRUE"
-                        val_picked = "TRUE"
-                        val_r_time = dt_now
+                        val_picked = "TRUE"  # 👈 這會精準寫進 L 欄！
+                        if not val_r_time:
+                            val_r_time = dt_now  # R 欄寫入時間
 
-                    # 為該列追加更新任務
+                    # 💡 3. 對齊你的截圖英文字母寫入：
                     gspread_updates.append({'range': f'C{row_num}', 'values': [[val_order_status]]})
-                    gspread_updates.append({'range': f'J{row_num}', 'values': [[val_open]]})
-                    gspread_updates.append({'range': f'K{row_num}', 'values': [[val_picked]]})
-                    gspread_updates.append({'range': f'L{row_num}', 'values': [[val_payment]]})
-                    gspread_updates.append({'range': f'M{row_num}', 'values': [[val_adjusted]]})
+                    gspread_updates.append({'range': f'J{row_num}', 'values': [[val_adjusted]]}) # J 欄：是否已調票
+                    gspread_updates.append({'range': f'K{row_num}', 'values': [[val_open]]})     # K 欄：是否開放取票
+                    gspread_updates.append({'range': f'L{row_num}', 'values': [[val_picked]]})   # L 欄：是否已取票 🎯
+                    gspread_updates.append({'range': f'M{row_num}', 'values': [[val_payment]]})  # M 欄：付款狀態
                     gspread_updates.append({'range': f'P{row_num}:R{row_num}', 'values': [[val_p_time, val_q_mode, val_r_time]]})
 
         if gspread_updates:
@@ -1952,7 +2012,7 @@ def api_admin_orders_batch_update_workflow():
         from lib.sheet_repo import clear_caches
         clear_caches(mode)
         
-        return jsonify({"success": True, "message": "取票與付款狀態（含多座位關聯與P,Q,R時間）已整批成功儲存！"})
+        return jsonify({"success": True, "message": "已成功更新取票狀態！"})
         
     except Exception as e:
         return jsonify({"success": False, "message": f"批次更新失敗：{str(e)}"}), 500

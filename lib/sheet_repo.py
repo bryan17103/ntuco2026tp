@@ -428,6 +428,7 @@ def group_order_rows(rows: List[dict]) -> List[dict]:
         payment_done = normalize_bool(row.get("付款狀態"))
         ticket_adjusted = normalize_bool(row.get("是否已調票"))
         ot_order_id = normalize_text(row.get("OT調票訂單號碼"))
+        payment_mode = normalize_text(row.get("付款模式") or (row.get("payment_mode") if "payment_mode" in row else ""))
 
         key = (order_id, dt, floor, row_label)
 
@@ -450,6 +451,7 @@ def group_order_rows(rows: List[dict]) -> List[dict]:
                 "pickup_open": pickup_open,
                 "picked_up": picked_up,
                 "payment_done": payment_done,
+                "payment_mode": "",
                 "ticket_adjusted": ticket_adjusted,
                 "order_status": status,
                 "seat_ot_map": {}
@@ -474,6 +476,8 @@ def group_order_rows(rows: List[dict]) -> List[dict]:
             grouped[key]["picked_up"] = True
         if payment_done:
             grouped[key]["payment_done"] = True
+        if payment_mode:
+            grouped[key]["payment_mode"] = payment_mode
         if ticket_adjusted:
             grouped[key]["ticket_adjusted"] = True
         if status:

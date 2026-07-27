@@ -330,7 +330,11 @@
                 if (adminUnsavedChanges[changeKey]?.payment_status !== undefined) {
                     currentPayment = adminUnsavedChanges[changeKey].payment_status;
                 } else if (order.payment_done) {
-                    currentPayment = "已付 [現金]"; 
+                    if (order.payment_mode === "bank") {
+                        currentPayment = "已付 [轉帳]";
+                    } else {
+                        currentPayment = "已付 [現金]";
+                    }
                 }
 
                 return `
